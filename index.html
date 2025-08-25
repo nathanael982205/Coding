@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IWB Org Chart</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      background: #f7fbff;
+    }
+    #cy {
+      position: absolute;
+      inset: 0;
+    }
+    .label {
+      text-align: center;
+      line-height: 1.15;
+    }
+  </style>
+  <script src="https://unpkg.com/cytoscape@3.28.1/dist/cytoscape.umd.js"></script>
+  <script src="https://unpkg.com/cytoscape-grid-guide@2.5.0/cytoscape-grid-guide.js"></script>
+</head>
+<body>
+  <div id="cy"></div>
+  <script>
+    /**
+     * This creates a static org chart approximating the user's second image.
+     * We use manual positions with locked layout for pixel-precise control.
+     */
+    const cy = cytoscape({
+      container: document.getElementById('cy'),
+      boxSelectionEnabled: false,
+      autoungrabify: false,
+      style: [
+        {
+          selector: 'node',
+          style: {
+            'shape': 'round-rectangle',
+            'width': 'label',
+            'height': 'label',
+            'padding': '8px',
+            'background-color': '#ffffff',
+            'border-color': '#3f6bb8',
+            'border-width': 2,
+            'border-opacity': 1,
+            'label': 'data(label)',
+            'text-wrap': 'wrap',
+            'text-valign': 'center',
+            'text-halign': 'center',
+            'color': '#0c2454',
+            'font-size': 14,
+            'font-weight': 600,
+            'text-margin-y': 0
+          }
+        },
+        {
+          selector: 'node.org-root',
+          style: {
+            'background-color': '#eaf1ff',
+            'border-width': 2,
+            'font-size': 22,
+            'font-weight': 800,
+            'padding': '10px 16px'
+          }
+        },
+        {
+          selector: 'node.sub-root',
+          style: {
+            'background-color': '#f1f6ff',
+            'font-size': 16,
+            'padding': '8px 14px'
+          }
+        },
+        {
+          selector: 'node.junction',
+          style: {
+            'shape': 'ellipse',
+            'width': 10,
+            'height': 10,
+            'background-color': '#3f6bb8',
+            'border-width': 0,
+            'label': ''
+          }
+        },
+        {
+          selector: 'node.compound',
+          style: {
+            'shape': 'round-rectangle',
+            'background-color': '#ffffff',
+            'border-color': '#a3b5da',
+            'border-style': 'dashed',
+            'border-width': 2,
+            'padding': '12px',
+            'text-valign': 'top',
+            'text-halign': 'center',
+            'font-size': 13,
+            'font-weight': 600
+          }
+        },
+        {
+          selector: 'edge',
+          style: {
+            'width': 2,
+            'line-color': '#5e7fbf',
+            'target-arrow-color': '#5e7fbf',
+            'target-arrow-shape': 'triangle',
+            'curve-style': 'taxi',
+            'taxi-direction': 'downward',
+            'taxi-turn': 5,
+            'taxi-turn-min-distance': 12
+          }
+        }
+      ],
+      elements: [
+        // Root
+        { data: { id: 'iwb', label: 'IWB Industrielle Werke Basel' }, classes: 'org-root' },
+
+        // Left sub-root: Renewable Power
+        { data: { id: 'renew', label: 'IWB Renewable Power AG [100%]', parent: '' }, classes: 'sub-root' },
+
+        // Länderholdings container (compound node)
+        { data: { id: 'laender', label: 'Länderholdings', parent: 'renew' }, classes: 'compound' },
+        { data: { id: 'fr', label: 'IWB Energie France SAS [100%]', parent: 'laender' } },
+        { data: { id: 'de', label: 'IWB Energie Deutschland GmbH [100%]', parent: 'laender' } },
+        { data: { id: 'ch', label: 'IWB Energie Schweiz AG [100%]', parent: 'laender' } },
+
+        // Right-side junction from IWB for Mutsee/KWO/PV
+        { data: { id: 'j_right' }, classes: 'junction' },
+        { data: { id: 'mutsee', label: 'Muttsee AlpinSolar AG [49%]' } },
+        { data: { id: 'kwo', label: 'Kraftwerke Oberhasli AG [16,7%]' } },
+        { data: { id: 'pv', label: 'PV-Anlagen Oberaar und Rätrichsboden [16,7%]' } },
+
+        // Junction under Renewable for Juvent / Swisspower
+        { data: { id: 'j_under_renew' }, classes: 'junction' },
+        { data: { id: 'juvent', label: 'Juvent SA [25%]' } },
+        { data: { id: 'spg', label: 'Swisspower Green GAS AG [14%]*' } },
+
+        // Edges
+        { data: { id: 'e_iwb_renew', source: 'iwb', target: 'renew' } },
+        { data: { id: 'e_iwb_jr', source: 'iwb', target: 'j_right' } },
+        { data: { id: 'e_jr_mutsee', source: 'j_right', target: 'mutsee' } },
+        { data: { id: 'e_jr_kwo', source: 'j_right', target: 'kwo' } },
+        { data: { id: 'e_jr_pv', source: 'j_right', target: 'pv' } },
+
+        { data: { id: 'e_renew_j', source: 'renew', target: 'j_under_renew' } },
+        { data: { id: 'e_j_juvent', source: 'j_under_renew', target: 'juvent' } },
+        { data: { id: 'e_j_spg', source: 'j_under_renew', target: 'spg' } }
+      ],
+      layout: {
+        name: 'preset'
+      }
+    });
+
+    // Absolute positions to approximate the layout from the reference image
+    const centerX = window.innerWidth / 2;
+    const topY = 60;
+    const xLeft = centerX - 260; // Renewable Power further left
+    const xRight = centerX + 300; // Right side items
+
+    cy.$('#iwb').position({ x: centerX, y: topY });
+    cy.$('#renew').position({ x: xLeft, y: topY + 70 });
+    cy.$('#laender').position({ x: xLeft, y: topY + 170 });
+
+    // Place the three Länderholding children within the compound
+    const spread = 170;
+    cy.$('#fr').position({ x: xLeft - spread, y: topY + 200 });
+    cy.$('#de').position({ x: xLeft, y: topY + 200 });
+    cy.$('#ch').position({ x: xLeft + spread, y: topY + 200 });
+
+    // Right junction and its children
+    cy.$('#j_right').position({ x: xRight - 20, y: topY + 70 });
+    cy.$('#mutsee').position({ x: xRight + 20, y: topY + 20 });
+    cy.$('#kwo').position({ x: xRight + 20, y: topY + 70 });
+    cy.$('#pv').position({ x: xRight + 20, y: topY + 120 });
+
+    // Junction under renewable
+    cy.$('#j_under_renew').position({ x: xLeft + 260, y: topY + 140 });
+    cy.$('#juvent').position({ x: xLeft + 420, y: topY + 110 });
+    cy.$('#spg').position({ x: xLeft + 420, y: topY + 160 });
+
+    // Fit view nicely
+    cy.fit(undefined, 40);
+
+    // Keep text centered in all nodes
+    cy.style().update();
+    window.addEventListener('resize', () => {
+      // Keep root centered on resize; simple recompute
+      const cx = window.innerWidth / 2;
+      const dx = cx - centerX;
+      cy.nodes().positions((node) => {
+        const p = node.position();
+        return { x: p.x + dx, y: p.y };
+      });
+      cy.fit(undefined, 40);
+    });
+  </script>
+</body>
+</html>
+
