@@ -399,19 +399,14 @@
     },
     {
       "name": "treeClickStoreTemp",
-      "source": "treeCalcs",
+      "source": "treeAncestors",
       "transform": [
         {
-          "type": "formula",
-          "expr": "pluck(treeAncestors('treeCalcs', datum.id), 'id')",
-          "as": "ancestorIds"
-        },
-        {
           "type": "filter",
-          "expr": "startingDepth!=-1 ? datum.depth <= startingDepth : node != 0 && !isExpanded ? (datum.id == node || datum.parent == node) : node != 0 && isExpanded ? indexof(datum.ancestorIds, node) >= 0 && datum.id != node : false"
+          "expr": "startingDepth!=-1 ? datum.depth <= startingDepth : node != 0 && !isExpanded ? (datum.parent == node || datum.id == node) : node != 0 && isExpanded ? datum.allParents == node : false"
         },
-        { "type": "project", "fields": ["id", "name", "parent", "x", "y", "depth", "children", "title"] },
-        { "type": "aggregate", "fields": ["id"], "ops": ["min"], "groupby": ["id", "name", "parent", "x", "y", "depth", "children", "title"] }
+        { "type": "project", "fields": ["id", "name", "parent", "x", "y", "depth", "children"] },
+        { "type": "aggregate", "fields": ["id"], "ops": ["min"], "groupby": ["id", "name", "parent", "x", "y", "depth", "children"] }
       ]
     },
     {
