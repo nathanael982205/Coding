@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vega Organigram Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        .vis-container {
+            flex: 1;
+        }
+        .vis {
+            width: 100%;
+            height: 900px;
+            border: 1px solid #ccc;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            margin: 5px;
+            padding: 10px;
+        }
+        h2 {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Vega Organigram Test</h1>
+    <div class="controls">
+        <button onclick="loadSampleData()">Load Sample Data</button>
+        <button onclick="expandAll()">Expand All</button>
+        <button onclick="collapseAll()">Collapse All</button>
+    </div>
+    <div class="container">
+        <div class="vis-container">
+            <h2>Original</h2>
+            <div id="vis1" class="vis"></div>
+        </div>
+        <div class="vis-container">
+            <h2>Fixed</h2>
+            <div id="vis2" class="vis"></div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data for testing
+        const sampleData = [
+            {
+                level1: "IWB",
+                level2: "IWB Renewable Power AG",
+                level3: "IWB Energie Deutschland",
+                level4: "Wind Park 1",
+                level5: null,
+                level6: null,
+                person: "CEO",
+                kpi: 85
+            },
+            {
+                level1: "IWB",
+                level2: "IWB Renewable Power AG",
+                level3: "IWB Energie Deutschland",
+                level4: "Wind Park 2",
+                level5: null,
+                level6: null,
+                person: "Manager 1",
+                kpi: 75
+            },
+            {
+                level1: "IWB",
+                level2: "IWB Renewable Power AG",
+                level3: "IWB Energie France",
+                level4: "Solar Farm 1",
+                level5: null,
+                level6: null,
+                person: "Manager 2",
+                kpi: 90
+            },
+            {
+                level1: "IWB",
+                level2: "IWB Renewable Power AG",
+                level3: "IWB Energie Schweiz",
+                level4: "Hydro Plant 1",
+                level5: null,
+                level6: null,
+                person: "Manager 3",
+                kpi: 80
+            },
+            {
+                level1: "IWB",
+                level2: "Other Division",
+                level3: "Sub Division",
+                level4: null,
+                level5: null,
+                level6: null,
+                person: "Director",
+                kpi: 70
+            }
+        ];
+
+        let view1, view2;
+
+        async function loadSampleData() {
+            // Load original spec
+            const response1 = await fetch('vega_spec.json');
+            const spec1 = await response1.json();
+            
+            // Load fixed spec
+            const response2 = await fetch('vega_spec_fixed.json');
+            const spec2 = await response2.json();
+            
+            // Embed original
+            vegaEmbed('#vis1', spec1, {
+                actions: false,
+                renderer: 'svg'
+            }).then((result) => {
+                view1 = result.view;
+                view1.data('dataset', sampleData);
+                view1.run();
+            }).catch(console.error);
+            
+            // Embed fixed
+            vegaEmbed('#vis2', spec2, {
+                actions: false,
+                renderer: 'svg'
+            }).then((result) => {
+                view2 = result.view;
+                view2.data('dataset', sampleData);
+                view2.run();
+            }).catch(console.error);
+        }
+
+        function expandAll() {
+            if (view1) {
+                view1.signal('startingDepth', 6).run();
+            }
+            if (view2) {
+                view2.signal('startingDepth', 6).run();
+            }
+        }
+
+        function collapseAll() {
+            if (view1) {
+                view1.signal('startingDepth', 1).run();
+            }
+            if (view2) {
+                view2.signal('startingDepth', 1).run();
+            }
+        }
+
+        // Load on page load
+        window.addEventListener('DOMContentLoaded', loadSampleData);
+    </script>
+</body>
+</html>
