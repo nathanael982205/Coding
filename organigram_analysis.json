@@ -17,7 +17,7 @@
     { "name": "deutschlandXOffset", "value": -150 },
     { "name": "schweizXOffset", "value": -150 },
     { "name": "countryBoxPadLeft", "value": 20 },
-    { "name": "countryBoxPadRight", "value": 200 },
+    { "name": "countryBoxPadRight", "value": 100 },
     { "name": "countryBoxPadTop", "value": 40 },
     { "name": "countryBoxPadBottom", "value": 100 },
     { "name": "countryBoxStroke", "value": 2 },
@@ -340,7 +340,7 @@
       "transform": [
         { "type": "filter", "expr": "indata('treeClickStorePerm','id', datum.id)" },
         { "type": "filter", "expr": "!datum.stackMe" },
-        { "type": "filter", "expr": "indexof(sideNodes, reverse(split(datum.id,'|'))[0]) == -1" },
+        { "type": "filter", "expr": "true" },
         { "type": "filter", "expr": "!(indexof(lower(trim(reverse(split(datum.parent,'|'))[0])),'iwb energie france')>=0 || indexof(lower(trim(reverse(split(datum.parent,'|'))[0])),'iwb energie deutschland')>=0 || indexof(lower(trim(reverse(split(datum.parent,'|'))[0])),'iwb energie schweiz')>=0)" },
         { "type": "formula", "expr": "datum.isLänderholding ? datum.parent_x - 300 : datum.parent_x", "as": "x" },
         { "type": "formula", "expr": "lower(trim(reverse(split(datum.id,'|'))[0]))", "as": "title_lower" },
@@ -738,9 +738,9 @@
         }
       }
     },
-    {
+        {
       "type": "rule",
-      "zindex": 10,
+      "zindex": 20,
       "interactive": false,
       "from": { "data": "countryBus" },
       "encode": { "update": {
@@ -749,9 +749,9 @@
         "stroke": { "value": "#002A6F" }, "strokeWidth": { "value": 1.2 }
       } }
     },
-    {
+        {
       "type": "rule",
-      "zindex": 10,
+      "zindex": 20,
       "interactive": false,
       "from": { "data": "linksCountryBusParent" },
       "encode": { "update": {
@@ -762,7 +762,7 @@
     },
     {
       "type": "rule",
-      "zindex": 10,
+      "zindex": 20,
       "interactive": false,
       "from": { "data": "linksCountryBusChildren" },
       "encode": { "update": {
@@ -806,6 +806,7 @@
       "name": "node",
       "description": "The parent node",
       "type": "group",
+      "zindex": 25,
       "clip": false,
       "from": { "data": "visibleNodes" },
       "encode": {
