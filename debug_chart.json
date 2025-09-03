@@ -1,0 +1,88 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "autosize": { "type": "fit", "contains": "padding", "resize": true },        
+  "description": "Debug Bus Issues",
+  "background": null,
+  "padding": 50,
+  "signals": [
+    { "name": "nodeWidth", "value": 300 },
+    { "name": "nodeHeight", "value": 70 },
+    { "name": "sideBusPad", "value": 60 },
+    { "name": "countryChildrenExtraGap", "value": 1.25 }
+  ],
+  "data": [
+    {
+      "name": "testData",
+      "values": [
+        {"id": "IWB|IWB Renewable Power AG", "parent": "IWB", "title": "IWB Renewable Power AG", "x": 100, "y": 100},
+        {"id": "IWB|IWB Renewable Power AG|IWB Energie France SAS", "parent": "IWB|IWB Renewable Power AG", "title": "IWB Energie France SAS", "x": 50, "y": 200},
+        {"id": "IWB|IWB Renewable Power AG|IWB Energie France SAS|Child1", "parent": "IWB|IWB Renewable Power AG|IWB Energie France SAS", "title": "Child1", "x": 50, "y": 300}
+      ]
+    },
+    {
+      "name": "treeClickStorePerm",
+      "source": "testData"
+    },
+    {
+      "name": "treeLayout",
+      "source": "testData",
+      "transform": [
+        { "type": "formula", "expr": "lower(trim(reverse(split(datum.id,'|'))[0]))", "as": "title_lower" },
+        { "type": "formula", "expr": "lower(trim(reverse(split(datum.parent,'|'))[0]))", "as": "parent_title_lower" }
+      ]
+    },
+    {
+      "name": "countryParents",
+      "source": "treeLayout", 
+      "transform": [
+        { "type": "filter", "expr": "indata('treeClickStorePerm','id', datum.id)" },
+        { "type": "formula", "expr": "lower(trim(reverse(split(datum.id,'|'))[0]))", "as": "id_title_lower" },
+        { "type": "filter", "expr": "indexof(datum.parent_title_lower,'iwb renewable power ag')>=0" },
+        { "type": "filter", "expr": "indexof(datum.id_title_lower,'iwb energie france')>=0" },
+        { "type": "formula", "expr": "datum.x - sideBusPad", "as": "bus_x" },
+        { "type": "formula", "expr": "datum.y + nodeHeight/2", "as": "parent_ymid" }
+      ]
+    },
+    {
+      "name": "countrySideChildren",
+      "source": "testData",
+      "transform": [
+        { "type": "filter", "expr": "indata('treeClickStorePerm','id', datum.id)" },
+        { "type": "formula", "expr": "lower(trim(reverse(split(datum.parent,'|'))[0]))", "as": "parent_title_lower" },
+        { "type": "filter", "expr": "indexof(datum.parent_title_lower,'iwb energie france')>=0" },
+        { "type": "lookup", "from": "treeLayout", "key": "id", "fields": ["parent"], "values": ["x","y"], "as": ["parent_x","parent_y"], "default": null },
+        { "type": "filter", "expr": "isValid(datum.parent_x) && isValid(datum.parent_y)" },
+        { "type": "formula", "expr": "datum.parent_x - sideBusPad", "as": "bus_x" },
+        { "type": "formula", "expr": "datum.parent_y + nodeHeight + 50", "as": "y" }
+      ]
+    }
+  ],
+  "marks": [
+    {
+      "type": "text",
+      "from": { "data": "countryParents" },
+      "encode": {
+        "update": {
+          "x": { "value": 10 },
+          "y": { "value": 30 },
+          "text": { "signal": "'countryParents count: ' + length(data('countryParents'))" },
+          "fill": { "value": "red" },
+          "fontSize": { "value": 16 }
+        }
+      }
+    },
+    {
+      "type": "text", 
+      "from": { "data": "countrySideChildren" },
+      "encode": {
+        "update": {
+          "x": { "value": 10 },
+          "y": { "value": 60 },
+          "text": { "signal": "'countrySideChildren count: ' + length(data('countrySideChildren'))" },
+          "fill": { "value": "blue" },
+          "fontSize": { "value": 16 }
+        }
+      }
+    }
+  ]
+}
