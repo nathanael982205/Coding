@@ -1,0 +1,49 @@
+// Füge diese Debug-Marks zu deinem Code hinzu, um zu sehen wo die Bus-Verbindungen andocken:
+
+// 1. Debug-Punkte für Länderholding-Verbindungen
+{
+  "type": "symbol",
+  "from": { "data": "linksCountryBusParent" },
+  "encode": {
+    "update": {
+      "x": { "field": "pxs" },
+      "y": { "field": "pys" },
+      "size": { "value": 200 },
+      "fill": { "value": "red" },
+      "stroke": { "value": "white" },
+      "strokeWidth": { "value": 2 }
+    }
+  }
+},
+
+// 2. Debug-Punkte für Children-Verbindungen  
+{
+  "type": "symbol",
+  "from": { "data": "linksCountryBusChildren" },
+  "encode": {
+    "update": {
+      "x": { "field": "cxs" },
+      "y": { "field": "ys" },
+      "size": { "value": 200 },
+      "fill": { "value": "blue" },
+      "stroke": { "value": "white" },
+      "strokeWidth": { "value": 2 }
+    }
+  }
+},
+
+// 3. Debug-Punkte für Bus-Start/Ende
+{
+  "type": "symbol",
+  "from": { "data": "countryBus" },
+  "encode": {
+    "update": {
+      "x": { "field": "xs" },
+      "y": { "field": "y1s" },
+      "size": { "value": 300 },
+      "fill": { "value": "green" },
+      "stroke": { "value": "white" },
+      "strokeWidth": { "value": 2 }
+    }
+  }
+}
