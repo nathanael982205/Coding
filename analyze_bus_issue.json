@@ -1,0 +1,5 @@
+{
+  "analysis": "Das Problem liegt in linksCountryBusParent",
+  "issue": "Die horizontale Verbindung von Länderholding zum Bus wird nicht gezeichnet",
+  "reason": "Möglicherweise Problem mit bus_x Berechnung oder parent_ymid Position"
+}
