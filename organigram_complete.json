@@ -1,0 +1,968 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+   "autosize": { "type": "fit", "contains": "padding", "resize": true },        
+  "description": "Organigram IWB",
+  "background": null,
+  "padding": 50,
+  "signals": [
+    { "name": "nodeWidth", "value": 300 },
+    { "name": "nodeHeight", "value": 70 },
+    { "name": "verticalNodeGap", "value": 350 },
+    { "name": "horizontalNodeGap", "value": -150 },
+    { "name": "rpExtraGap", "value": 10 },
+    { "name": "countryChildrenExtraGap", "value": 1.25 },
+    { "name": "countryChildHeightFactor", "value": 1.0 },
+    { "name": "countryLinkYOffset", "value": 25 },
+    { "name": "franceXOffset", "value": -150 },
+    { "name": "deutschlandXOffset", "value": -150 },
+    { "name": "schweizXOffset", "value": -150 },
+    { "name": "countryBoxPadLeft", "value": 20 },
+    { "name": "countryBoxPadRight", "value": 340 },
+    { "name": "countryBoxPadTop", "value": 40 },
+    { "name": "countryBoxPadBottom", "value": 100 },
+    { "name": "countryBoxStroke", "value": 2 },
+    { "name": "countryBoxCorner", "value": 10 },
+    { "name": "countryBoxLabelSize", "value": 22 },
+    { "name": "sideParentXOffset", "value": -145 },
+    { "name": "sideParentYOffset", "value": 0 },
+    { "name": "sideChildXOffset", "value": 0 },
+    { "name": "sideChildYOffset", "value": 0 },
+    { "name": "wrapChars", "value": 40 },
+    { "name": "sideBusPad", "value": 60 },
+    { "name": "sideBusOffset", "value": 450 },
+    { "name": "busYOffset", "value": 40 },
+    { "name": "busLänderholdingAnsatzNod", "value": 375 },
+    
+    {
+      "name": "startingDepth",
+      "value": 99,
+      "on": [
+        { "events": { "type": "timer", "throttle": 0 }, "update": "-1" }
+      ]
+    },
+    { "name": "stackStep", "update": "nodeHeight + verticalNodeGap" },
+    { "name": "rowOffset", "value": 0.066 },
+    {
+      "name": "node",
+      "value": 0,
+      "on": [
+        { "events": { "type": "click", "markname": "node" }, "update": "datum.id" },
+        { "events": { "type": "timer", "throttle": 10 }, "update": "0" }
+      ]
+    },
+    {
+      "name": "nodeHighlight",
+      "value": "[0]",
+      "on": [
+        { "events": { "type": "mouseover", "markname": "node" }, "update": "pluck(treeAncestors('treeCalcs', datum.id), 'id')" },
+        { "events": { "type": "mouseout" }, "update": "[0]" }
+      ]
+    },
+    {
+      "name": "isExpanded",
+      "value": 0,
+      "on": [
+        {
+          "events": { "type": "click", "markname": "node" },
+          "update": "datum.children > 0 && indata('treeClickStorePerm', 'id', datum.childrenIds[0])?true:false"
+        }
+      ]
+    },
+    { "name": "xrange", "update": "[0, width]" },
+    { "name": "yrange", "update": "[0, height]" },
+    {
+      "name": "down",
+      "value": null,
+      "on": [
+        { "events": "touchend", "update": "null" },
+        { "events": "mousedown, touchstart", "update": "xy()" }
+      ]
+    },
+    {
+      "name": "xcur",
+      "value": null,
+      "on": [
+        { "events": "mousedown, touchstart, touchend", "update": "slice(xdom)" }
+      ]
+    },
+    {
+      "name": "ycur",
+      "value": null,
+      "on": [
+        { "events": "mousedown, touchstart, touchend", "update": "slice(ydom)" }
+      ]
+    },
+    {
+      "name": "delta",
+      "value": [0, 0],
+      "on": [
+        {
+          "events": [
+            {
+              "source": "window",
+              "type": "mousemove",
+              "consume": true,
+              "between": [
+                { "type": "mousedown" },
+                { "source": "window", "type": "mouseup" }
+              ]
+            },
+            { "type": "touchmove", "consume": true, "filter": "event.touches.length === 1" }
+          ],
+          "update": "down ? [down[0]-x(), down[1]-y()] : [0,0]"
+        }
+      ]
+    },
+    {
+      "name": "anchor",
+      "value": [0, 0],
+      "on": [
+        { "events": "wheel", "update": "[invert('xscale', x()), invert('yscale', y())]" },
+        {
+          "events": { "type": "touchstart", "filter": "event.touches.length===2" },
+          "update": "[(xdom[0] + xdom[1]) / 2, (ydom[0] + ydom[1]) / 2]"
+        }
+      ]
+    },
+    { "name": "xext", "update": "[0,width]" },
+    { "name": "yext", "update": "[0,height]" },
+    {
+      "name": "zoom",
+      "value": 1,
+      "on": [
+        { "events": "wheel!", "force": true, "update": "pow(1.001, event.deltaY * pow(16, event.deltaMode))" },
+        { "events": { "signal": "dist2" }, "force": true, "update": "dist1 / dist2" }
+      ]
+    },
+    {
+      "name": "dist1",
+      "value": 0,
+      "on": [
+        { "events": { "type": "touchstart", "filter": "event.touches.length===2" }, "update": "pinchDistance(event)" },
+        { "events": { "signal": "dist2" }, "update": "dist2" }
+      ]
+    },
+    {
+      "name": "dist2",
+      "value": 0,
+      "on": [
+        {
+          "events": { "type": "touchmove", "consume": true, "filter": "event.touches.length===2" },
+          "update": "pinchDistance(event)"
+        }
+      ]
+    },
+    {
+      "name": "xdom",
+      "update": "slice(xext)",
+      "on": [
+        { "events": { "signal": "delta" }, "update": "[xcur[0] + span(xcur) * delta[0] / width, xcur[1] + span(xcur) * delta[0] / width]" },
+        { "events": { "signal": "zoom" }, "update": "[anchor[0] + (xdom[0] - anchor[0]) * zoom, anchor[0] + (xdom[1] - anchor[0]) * zoom]" },
+        { "events": "dblclick", "update": "[0,width]" }
+      ]
+    },
+    {
+      "name": "ydom",
+      "update": "slice(yext)",
+      "on": [
+        { "events": { "signal": "delta" }, "update": "[ycur[0] + span(ycur) * delta[1] / height, ycur[1] + span(ycur) * delta[1] / height]" },
+        { "events": { "signal": "zoom" }, "update": "[anchor[1] + (ydom[0] - anchor[1]) * zoom, anchor[1] + (ydom[1] - anchor[1]) * zoom]" },
+        { "events": "dblclick", "update": "[0,height]" }
+      ]
+    },
+    { "name": "scaledNodeWidth", "update": "(nodeWidth/ span(xdom))*width" },
+    { "name": "scaledNodeHeight", "update": "abs(nodeHeight/ span(ydom))*height" },
+    { "name": "scaledFont13", "update": "(22/ span(xdom))*width" },
+    { "name": "scaledFont12", "update": "(15/ span(xdom))*width" },
+    { "name": "scaledFont11", "update": "(14/ span(xdom))*width" },
+    { "name": "scaledKPIHeight", "update": "(5/ span(xdom))*width" },
+    { "name": "scaledLimit", "update": "(20/ span(xdom))*width" },
+    { "name": "iwbShiftX", "value": 400 },
+    {
+      "name": "sideNodes",
+      "value": [
+        "Mutsee AlpinSolar AG",
+        "Kraftwerke Oberhasli AG",
+        "PV-Anlagen Oberaar und Räterichsboden",
+        "Windpark Große Schanze GmbH & Co. KG"
+      ]
+    },
+    {
+      "name": "isLänderholding",
+      "value": false,
+      "on": [
+        { "events": { "type": "mouseover", "markname": "node" }, "update": "indexof(datum.title_lower, 'iwb renewable power ag') >= 0" },
+        { "events": { "type": "mouseout" }, "update": "false" }
+      ]
+    }
+  ],
+  "data": [
+    { "name": "dataset" },
+    {
+      "name": "wideToTallBase",
+      "source": "dataset",
+      "transform": [
+        { "type": "formula", "expr": "{key: datum['level1'], parent: null, person: datum['person'], kpi: datum['kpi'], LevelId: 1}", "as": "l1" },
+        { "type": "formula", "expr": "{key: datum['level1'] + '|' + datum['level2'], parent: datum['level1'], person: datum['person'], kpi: datum['kpi'], LevelId: 2}", "as": "l2" },
+        { "type": "formula", "expr": "{key: datum['level1'] + '|' + datum['level2'] + '|' + datum['level3'], parent: datum['level1'] + '|' + datum['level2'], person: datum['person'], kpi: datum['kpi'], LevelId: 3}", "as": "l3" },
+        { "type": "formula", "expr": "{key: datum['level1'] + '|' + datum['level2'] + '|' + datum['level3'] + '|' + datum['level4'], parent: datum['level1'] + '|' + datum['level2'] + '|' + datum['level3'], person: datum['person'], kpi: datum['kpi'], LevelId: 4}", "as": "l4" },
+        { "type": "formula", "expr": "{key: datum['level1'] + '|' + datum['level2'] + '|' + datum['level3'] + '|' + datum['level4'] + '|' + datum['level5'], parent: datum['level1'] + '|' + datum['level2'] + '|' + datum['level3'] + '|' + datum['level4'], person: datum['person'], kpi: datum['kpi'], LevelId: 5}", "as": "l5" },
+        { "type": "formula", "expr": "{key: datum['level1'] + '|' + datum['level2'] + '|' + datum['level3'] + '|' + datum['level4'] + '|' + datum['level5'] + '|' + datum['level6'], parent: datum['level1'] + '|' + datum['level2'] + '|' + datum['level3'] + '|' + datum['level4'] + '|' + datum['level5'], person: datum['person'], kpi: datum['kpi'], LevelId: 6}", "as": "l6" },
+        { "type": "fold", "fields": ["l1", "l2", "l3", "l4", "l5", "l6"] },
+        { "type": "project", "fields": ["key", "value"] },
+        { "type": "formula", "expr": "datum.value.key", "as": "id" },
+        { "type": "formula", "expr": "reverse(split(datum.value.key,'|'))[0]", "as": "title" },
+        { "type": "formula", "expr": "datum.value.parent", "as": "parent" },
+        { "type": "formula", "expr": "datum['level2']", "as": "LevelId" },
+        { "type": "filter", "expr": "datum.title != 'null' && datum.title != 'undefined'" },
+        { "type": "aggregate", "groupby": ["id", "parent", "title", "value"] },
+        { "type": "formula", "expr": "datum.value.person", "as": "person" },
+        { "type": "formula", "expr": "datum.value.kpi", "as": "kpi" },
+        { "type": "formula", "expr": "datum.value.LevelId", "as": "LevelId" }
+      ]
+    },
+    {
+      "name": "wideToTall",
+      "source": "wideToTallBase",
+      "transform": [
+        { "type": "filter", "expr": "datum.LevelId <= 6" }
+      ]
+    },
+    {
+      "name": "treeCalcs",
+      "source": "wideToTall",
+      "transform": [
+        { "type": "stratify", "key": "id", "parentKey": "parent" },
+        { "type": "tree", "method": { "signal": "'tidy'" }, "separation": { "signal": "false" }, "as": ["y", "x", "depth", "children"] },
+        { "as": "parent", "type": "formula", "expr": "datum.parent" }
+      ]
+    },
+    {
+      "name": "treeHead",
+      "source": "treeCalcs",
+      "transform": [
+        { "type": "filter", "expr": "datum.depth < 2" }
+      ]
+    },
+    {
+      "name": "treeRow",
+      "source": "treeCalcs",
+      "transform": [
+        { "type": "filter", "expr": "datum.depth >= 2" },
+        {
+          "type": "lookup",
+          "from": "treeCalcs",
+          "key": "id",
+          "fields": ["parent"],
+          "values": ["x", "y", "depth"],
+          "as": ["parent_x", "parent_y", "parent_depth"],
+          "default": null
+        },
+        {
+          "type": "window",
+          "sort": { "field": "id", "order": "ascending" },
+          "ops": ["dense_rank"],
+          "fields": ["id"],
+          "groupby": ["parent"],
+          "as": ["d_rank"]
+        },
+        { "type": "formula", "expr": "lower(trim((reverse(split(datum.parent,'|'))[0] || '')))", "as": "parent_title_lower" },
+        { "type": "formula", "expr": "lower(trim(reverse(split(datum.id,'|'))[0]))", "as": "id_title_lower" },
+        { "type": "formula", "expr": "lower(trim((reverse(split(datum.parent,'|'))[1] || '')))", "as": "grandparent_title_lower" },
+        { "type": "formula", "expr": "lower(trim((reverse(split(datum.parent,'|'))[2] || '')))", "as": "greatgrandparent_title_lower" },
+        {
+          "type": "formula",
+          "as": "country_key",
+          "expr": "indexof((datum.parent_title_lower||''),'iwb energie ')==0 ? datum.parent_title_lower : indexof((datum.grandparent_title_lower||''),'iwb energie ')==0 ? datum.grandparent_title_lower : indexof((datum.greatgrandparent_title_lower||''),'iwb energie ')==0 ? datum.greatgrandparent_title_lower : null"
+        },
+        {
+          "type": "formula",
+          "expr": "((datum.depth >= 3 && isValid(datum.country_key)) || indexof(datum.id_title_lower,'juvent sa')>=0 || indexof(datum.id_title_lower,'swisspower green gas')>=0) && indexof(datum.id_title_lower,'windpark grosse schanze')==-1",
+          "as": "stackMe"
+        },
+        { "type": "formula", "expr": "datum.x", "as": "x" },
+        { "type": "formula", "expr": "datum.y", "as": "y" },
+        { "type": "formula", "expr": "scale('xscale', datum.x)", "as": "xscaled" },
+        { "type": "formula", "expr": "scale('yscale', datum.y)", "as": "yscaled" }
+      ]
+    },
+    {
+      "name": "treeChildren",
+      "source": "treeCalcs",
+      "transform": [
+        { "type": "aggregate", "groupby": ["parent"], "fields": ["parent"], "ops": ["values"], "as": ["childrenObjects"] },
+        { "type": "formula", "expr": "pluck(datum.childrenObjects,'id')", "as": "childrenIds" }
+      ]
+    },
+    {
+      "name": "treeAncestors",
+      "source": "treeCalcs",
+      "transform": [
+        { "type": "formula", "as": "treeAncestors", "expr": "treeAncestors('treeCalcs', datum.id, 'root')" },
+        { "type": "flatten", "fields": ["treeAncestors"] },
+        { "type": "formula", "expr": "datum.treeAncestors.parent", "as": "allParents" }
+      ]
+    },
+    {
+      "name": "treeChildrenAll",
+      "source": "treeAncestors",
+      "transform": [
+        { "type": "project", "fields": ["allParents", "id", "name", "parent", "x", "y", "depth", "children"] },
+        {
+          "type": "aggregate",
+          "fields": ["parent", "parent", "id"],
+          "ops": ["values", "count", "min"],
+          "groupby": ["allParents"],
+          "as": ["allChildrenObjects", "allChildrenCount", "id"]
+        },
+        { "type": "formula", "expr": "pluck(datum.allChildrenObjects,'id')", "as": "allChildrenIds" }
+      ]
+    },
+    {
+      "name": "treeClickStoreTemp",
+      "source": "treeAncestors",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "startingDepth!=-1 ? datum.depth <= startingDepth : node != 0 && !isExpanded ? (datum.parent == node || datum.id == node) : node != 0 && isExpanded ? datum.allParents == node : false"
+        },
+        { "type": "project", "fields": ["id", "name", "parent", "x", "y", "depth", "children"] },
+        { "type": "aggregate", "fields": ["id"], "ops": ["min"], "groupby": ["id", "name", "parent", "x", "y", "depth", "children"] }
+      ]
+    },
+    {
+      "name": "treeClickStorePerm",
+      "values": [],
+      "on": [
+        { "trigger": "startingDepth>=0", "insert": "data('treeClickStoreTemp')" },
+        { "trigger": "node", "insert": "!isExpanded? data('treeClickStoreTemp'):false" },
+        { "trigger": "node", "remove": "isExpanded?data('treeClickStoreTemp'):false" }
+      ]
+    },
+    {
+      "name": "treeLayout",
+      "source": ["treeHead", "treeRow"],
+      "transform": [
+        { "type": "filter", "expr": "indata('treeClickStorePerm','id', datum.id)" },
+        { "type": "filter", "expr": "!datum.stackMe" },
+        { "type": "filter", "expr": "indexof(sideNodes, reverse(split(datum.id,'|'))[0]) == -1" },
+        { "type": "filter", "expr": "!(indexof(lower(trim(reverse(split(datum.parent,'|'))[0])),'iwb energie france')>=0 || indexof(lower(trim(reverse(split(datum.parent,'|'))[0])),'iwb energie deutschland')>=0 || indexof(lower(trim(reverse(split(datum.parent,'|'))[0])),'iwb energie schweiz')>=0)" },
+        { "type": "formula", "expr": "datum.isLänderholding ? datum.parent_x - 300 : datum.parent_x", "as": "x" },
+        { "type": "formula", "expr": "lower(trim(reverse(split(datum.id,'|'))[0]))", "as": "title_lower" },
+        {
+          "type": "formula",
+          "expr": "indexof(datum.title_lower,'iwb energie france')>=0 ? 0 : indexof(datum.title_lower,'iwb energie deutschland')>=0 ? 1 : indexof(datum.title_lower,'iwb energie schweiz')>=0 ? 2 : 99",
+          "as": "orderHint"
+        },
+        { "type": "collect", "sort": { "field": ["parent", "orderHint", "id"], "order": ["ascending", "ascending", "ascending"] } },
+        { "type": "stratify", "key": "id", "parentKey": "parent" },
+        {
+          "type": "tree",
+          "method": { "signal": "'tidy'" },
+          "nodeSize": [
+            { "signal": "nodeHeight+verticalNodeGap" },
+            { "signal": "nodeWidth+horizontalNodeGap" }
+          ],
+          "separation": { "signal": "false" },
+          "as": ["x", "y", "depth", "children"]
+        },
+        { "type": "formula", "expr": "datum.title == 'IWB Renewable Power AG' ? datum.x - 210 : datum.x", "as": "x" },
+        { "type": "formula", "expr": "lower(trim(reverse(split(datum.parent,'|'))[0]))", "as": "parent_title_lower" },
+        {
+          "type": "formula",
+          "as": "x",
+          "expr": "datum.x + (indexof(datum.parent_title_lower,'iwb renewable power ag')>=0 ? (indexof(datum.title_lower,'iwb energie france')>=0 ? franceXOffset : indexof(datum.title_lower,'iwb energie deutschland')>=0 ? deutschlandXOffset : indexof(datum.title_lower,'iwb energie schweiz')>=0 ? schweizXOffset : 0) : 0)"
+        },
+        {
+          "type": "formula",
+          "expr": "datum.y + (indexof(datum.parent_title_lower,'iwb renewable power ag')>=0 ? rpExtraGap : 0)",
+          "as": "y"
+        },
+        { "type": "formula", "expr": "scale('xscale',datum.x)", "as": "xscaled" },
+        { "type": "formula", "expr": "scale('yscale', datum.y)", "as": "yscaled" },
+        { "as": "parent", "type": "formula", "expr": "datum.parent" }
+      ]
+    },
+    {
+  "name": "countriesBox",
+  "source": "treeLayout",
+  "transform": [
+    { "type": "formula", "expr": "lower(trim(reverse(split(datum.parent,'|'))[0]))", "as": "parent_title_lower" },
+    { "type": "formula", "expr": "lower(trim(reverse(split(datum.id,'|'))[0]))", "as": "id_title_lower" },
+    { "type": "filter", "expr": "indexof(datum.parent_title_lower,'iwb renewable power ag')>=0" },
+    { "type": "filter", "expr": "indexof(datum.id_title_lower,'iwb energie france')>=0 || indexof(datum.id_title_lower,'iwb energie deutschland')>=0 || indexof(datum.id_title_lower,'iwb energie schweiz')>=0" },
+    { "type": "aggregate", "fields": ["x","x","y","y"], "ops": ["min","max","min","max"], "as": ["minx","maxx","miny","maxy"] },
+    { "type": "formula", "expr": "datum.minx - countryBoxPadLeft", "as": "bx" },
+    { "type": "formula", "expr": "datum.miny - countryBoxPadTop", "as": "by" },
+    { "type": "formula", "expr": "(datum.maxx - datum.minx) + countryBoxPadLeft + countryBoxPadRight", "as": "bw" },
+    { "type": "formula", "expr": "(datum.maxy - datum.miny) + countryBoxPadTop + countryBoxPadBottom", "as": "bh" },
+    { "type": "formula", "expr": "scale('xscale', datum.bx)", "as": "bxs" },
+    { "type": "formula", "expr": "scale('yscale', datum.by)", "as": "bys" },
+    { "type": "formula", "expr": "scale('xscale', datum.bx + datum.bw) - scale('xscale', datum.bx)", "as": "bws" },
+    { "type": "formula", "expr": "scale('yscale', datum.by + datum.bh) - scale('yscale', datum.by)", "as": "bhs" }
+  ]
+},
+    
+    {
+      "name": "stackedParentDisplay",
+      "source": "treeRow",
+      "transform": [
+        { "type": "filter", "expr": "datum.stackMe" },
+        {
+          "type": "lookup",
+          "from": "treeLayout",
+          "key": "title_lower",
+          "fields": ["country_key"],
+          "values": ["x", "y"],
+          "as": ["country_x", "country_y"],
+          "default": null
+        },
+        { "type": "filter", "expr": "isValid(datum.country_x) && isValid(datum.country_y)" },
+        {
+          "type": "window",
+          "sort": { "field": "id", "order": "ascending" },
+          "ops": ["dense_rank"],
+          "fields": ["id"],
+          "groupby": ["parent"],
+          "as": ["d_rank"]
+        },
+        {
+          "type": "formula",
+          "as": "x_display",
+          "expr": "((indexof(datum.id_title_lower,'juvent sa')>=0 || indexof(datum.id_title_lower,'swisspower green gas')>=0) ? datum.country_x + nodeWidth + 600 : datum.country_x) + ((((indexof((datum.country_key||''),'iwb energie ')>=0) ? nodeWidth*countryChildrenExtraGap : nodeWidth) - nodeWidth)/2)"
+        },
+        { "type": "formula", "as": "y_display", "expr": "datum.country_y + nodeHeight + (datum.d_rank + 1) * (nodeHeight + 8)" }
+      ]
+    },
+    {
+      "name": "treeLayoutAdjusted",
+      "source": "treeRow",
+      "transform": [
+        { "type": "filter", "expr": "datum.stackMe" },
+        { "type": "formula", "expr": "lower(trim(reverse(split(datum.parent,'|'))[0]))", "as": "parent_title_lower" },
+        { "type": "filter", "expr": "!(indexof(datum.parent_title_lower,'iwb energie france')>=0 || indexof(datum.parent_title_lower,'iwb energie deutschland')>=0 || indexof(datum.parent_title_lower,'iwb energie schweiz')>=0)" },
+        { "type": "formula", "expr": "datum.parent_x", "as": "parent_x_row" },
+        { "type": "formula", "expr": "datum.parent_y", "as": "parent_y_row" },
+        {
+          "type": "lookup",
+          "from": "treeLayout",
+          "key": "title_lower",
+          "fields": ["country_key"],
+          "values": ["x", "y"],
+          "as": ["country_x", "country_y"],
+          "default": null
+        },
+        { "type": "formula", "expr": "datum.country_x", "as": "parent_x" },
+        { "type": "formula", "expr": "datum.country_y", "as": "parent_y" },
+        { "type": "filter", "expr": "isValid(datum.country_x) && isValid(datum.country_y)" },
+        {
+          "type": "lookup",
+          "from": "stackedParentDisplay",
+          "key": "id",
+          "fields": ["parent"],
+          "values": ["x_display", "y_display"],
+          "as": ["parent_x_stacked", "parent_y_stacked"],
+          "default": null
+        },
+        {
+          "type": "window",
+          "sort": { "field": "id", "order": "ascending" },
+          "ops": ["dense_rank"],
+          "fields": ["id"],
+          "groupby": ["parent"],
+          "as": ["d_rank"]
+        },
+        {
+          "type": "formula",
+          "as": "x",
+          "expr": "datum.depth >= 4 ? ((isValid(datum.parent_x_stacked) ? datum.parent_x_stacked : (isValid(datum.parent_x_row) ? datum.parent_x_row : datum.country_x)) - (nodeWidth - 700)) : (((indexof(datum.id_title_lower,'juvent sa')>=0 || indexof(datum.id_title_lower,'swisspower green gas')>=0) ? datum.country_x + nodeWidth + 600 : datum.country_x) + ((((indexof(datum.country_key,'iwb energie france')>=0 || indexof(datum.country_key,'iwb energie deutschland')>=0 || indexof(datum.country_key,'iwb energie schweiz')>=0) ? nodeWidth*countryChildrenExtraGap : nodeWidth) - nodeWidth)/2))"
+        },
+        {
+          "type": "formula",
+          "as": "y",
+          "expr": "datum.depth >= 4 ? (isValid(datum.parent_y_stacked) ? datum.parent_y_stacked : (isValid(datum.parent_y_row) ? datum.parent_y_row : datum.country_y)) : (datum.country_y + nodeHeight + (datum.d_rank + 1) * (nodeHeight + 8))"
+        },
+        { "type": "formula", "expr": "scale('xscale', datum.x)", "as": "xscaled" },
+        { "type": "formula", "expr": "scale('yscale', datum.y)", "as": "yscaled" }
+      ]
+    },
+    {
+  "name": "countryParents",
+  "source": "treeLayout",
+  "transform": [
+    { "type": "filter", "expr": "indata('treeClickStorePerm','id', datum.id)" },
+    { "type": "formula", "expr": "lower(trim(reverse(split(datum.id,'|'))[0]))", "as": "id_title_lower" },
+    { "type": "formula", "expr": "lower(trim(reverse(split(datum.parent,'|'))[0]))", "as": "parent_title_lower" },
+    { "type": "filter", "expr": "indexof(datum.parent_title_lower,'iwb renewable power ag')>=0" },
+    { "type": "filter", "expr": "indexof(datum.id_title_lower,'iwb energie france')>=0 || indexof(datum.id_title_lower,'iwb energie deutschland')>=0 || indexof(datum.id_title_lower,'iwb energie schweiz')>=0" },
+    { "type": "formula",
+      "expr": "datum.x + ((((indexof(datum.id_title_lower,'iwb energie france')>=0 || indexof(datum.id_title_lower,'iwb energie deutschland')>=0 || indexof(datum.id_title_lower,'iwb energie schweiz')>=0) ? nodeWidth*countryChildrenExtraGap : nodeWidth) - nodeWidth)/2) - sideBusPad",
+      "as": "bus_x"
+    },
+    { "type": "formula", "expr": "scale('yscale', datum.y + nodeHeight/2)", "as": "pys" },
+    { "type": "formula","expr": "reverse(pluck(treeAncestors('treeCalcs', datum.id), 'id'))[1]", "as": "treeParent" }
+  ]
+},
+{
+  "name": "countrySideChildren",
+  "source": "treeCalcs",
+  "transform": [
+    { "type": "formula", "expr": "lower(trim(reverse(split(datum.parent,'|'))[0]))", "as": "parent_title_lower" },
+    { "type": "filter", "expr": "indexof(datum.parent_title_lower,'iwb energie france')>=0 || indexof(datum.parent_title_lower,'iwb energie deutschland')>=0 || indexof(datum.parent_title_lower,'iwb energie schweiz')>=0" },
+    { "type": "filter", "expr": "indata('treeClickStorePerm','id', datum.parent)" },
+    { "type": "lookup", "from": "treeLayout", "key": "id", "fields": ["parent"], "values": ["x","y"], "as": ["parent_x","parent_y"], "default": null },
+    { "type": "filter", "expr": "isValid(datum.parent_x) && isValid(datum.parent_y)" },
+    { "type": "window", "sort": { "field": "id", "order": "ascending" }, "ops": ["dense_rank"], "fields": ["id"], "groupby": ["parent"], "as": ["d_rank"] },
+    { "type": "formula",
+      "expr": "datum.parent_x + ((((indexof(datum.parent_title_lower,'iwb energie france')>=0 || indexof(datum.parent_title_lower,'iwb energie deutschland')>=0 || indexof(datum.parent_title_lower,'iwb energie schweiz')>=0) ? nodeWidth*countryChildrenExtraGap : nodeWidth) - nodeWidth)/2)",
+      "as": "x"
+    },
+    { "type": "formula",
+      "expr": "datum.x - sideBusPad",
+      "as": "bus_x"
+    },
+    { "type": "formula", "expr": "datum.bus_x + sideChildXOffset + sideBusPad", "as": "x" },
+    { "type": "formula", "expr": "datum.parent_y + nodeHeight + (datum.d_rank) * (nodeHeight + 8) + sideChildYOffset", "as": "y" },
+    { "type": "formula", "expr": "scale('xscale', datum.x)", "as": "xscaled" },
+    { "type": "formula", "expr": "scale('yscale', datum.y)", "as": "yscaled" }
+  ]
+},
+{
+  "name": "countryBus",
+  "source": "countrySideChildren",
+  "transform": [
+    { "type": "aggregate", "groupby": ["parent","bus_x"], "fields": ["y","y","parent_y"], "ops": ["min","max","min"], "as": ["miny","maxy","parent_y"] },
+    { "type": "formula", "expr": "scale('xscale', datum.bus_x)", "as": "xs" },
+    { "type": "formula",
+      "expr": "scale('yscale', datum.parent_y + nodeHeight/2 - busYOffset)",
+      "as": "y1s"
+    },
+    { "type": "formula",
+      "expr": "scale('yscale', (datum.miny==datum.maxy ? datum.maxy + 20 : datum.maxy) + 1)",
+      "as": "y2s"
+    }
+  ]
+},
+{
+  "name": "linksCountryBusChildren",
+  "source": "countrySideChildren",
+  "transform": [
+    { "type": "formula", "expr": "scale('xscale', datum.bus_x)", "as": "bxs"},
+    { "type": "formula", "expr": "scale('xscale', datum.x + nodeWidth/2)", "as": "cxs" },
+    { "type": "formula", "expr": "scale('yscale', datum.y + nodeHeight/2)", "as": "ys" }
+  ]
+},
+{
+  "name": "linksCountryBusParent",
+  "source": "countryParents",
+  "transform": [
+    { "type": "lookup", "from": "countrySideChildren", "key": "parent", "fields": ["id"], "values": ["parent"], "as": ["hasChildren"], "default": null },
+    { "type": "filter", "expr": "isValid(datum.hasChildren)" },
+    { "type": "formula", "expr": "scale('xscale', datum.x + ((indexof(datum.id_title_lower,'iwb energie france')>=0 || indexof(datum.id_title_lower,'iwb energie deutschland')>=0 || indexof(datum.id_title_lower,'iwb energie schweiz')>=0) ? nodeWidth*countryChildrenExtraGap : nodeWidth)-busLänderholdingAnsatzNod)", "as": "pxs" },
+    { "type": "formula", "expr": "scale('xscale', datum.bus_x)", "as": "bxs" },
+    { "type": "formula", "expr": "scale('yscale', datum.y + nodeHeight/2 - busYOffset)", "as": "pys" }
+  ]
+},
+{
+  "name": "iwbVerticalStubs",
+  "source": "treeLayout",
+  "transform": [
+    { "type": "filter", "expr": "indata('treeClickStorePerm','id', datum.id)" },
+    { "type": "formula", "expr": "lower(trim(reverse(split(datum.parent,'|'))[0]))", "as": "parent_title_lower" },
+    { "type": "filter", "expr": "datum.parent_title_lower == 'iwb renewable power ag'" },
+    { "type": "lookup", "from": "treeLayout", "key": "id", "fields": ["parent"], "values": ["y"], "as": ["parent_y"], "default": null },
+    { "type": "formula", "expr": "scale('xscale', datum.x + nodeWidth/2)", "as": "xs" },
+    { "type": "formula", "expr": "scale('yscale', datum.parent_y + nodeHeight + 50)", "as": "y1s" },
+    { "type": "formula", "expr": "scale('yscale', datum.y + nodeHeight/2)", "as": "y2s" }
+  ]
+},
+    
+    
+    {
+      "name": "fullTreeLayout",
+      "source": ["treeLayout", "treeLayoutAdjusted", "countrySideChildren"],
+      "transform": [
+        { "type": "lookup", "from": "treeChildren", "key": "parent", "fields": ["id"], "values": ["childrenObjects", "childrenIds"] },
+        { "type": "lookup", "from": "treeChildrenAll", "key": "allParents", "fields": ["id"], "values": ["allChildrenIds", "allChildrenObjects"] },
+        { "type": "lookup", "from": "treeCalcs", "key": "id", "fields": ["id"], "values": ["children"] },
+        { "type": "formula", "expr": "reverse(pluck(treeAncestors('treeCalcs', datum.id), 'id'))[1]", "as": "treeParent" },
+        {
+          "type": "formula",
+          "as": "wrapBreak",
+          "expr": "length(datum.title) <= wrapChars ? -1 : (indexof(slice(datum.title, wrapChars, length(datum.title)),' ')>=0 ? wrapChars + indexof(slice(datum.title, wrapChars, length(datum.title)),' ') : wrapChars)"
+        },
+        { "type": "formula", "expr": "1", "as": "is_adjusted" },
+        {
+          "type": "formula",
+          "as": "title_wrapped",
+          "expr": "datum.wrapBreak < 0 ? datum.title : slice(datum.title, 0, datum.wrapBreak) + '\\n' + slice(datum.title, datum.wrapBreak + (slice(datum.title, datum.wrapBreak, datum.wrapBreak+1)==' ' ? 1 : 0), length(datum.title))"
+        }
+      ]
+    },
+    {
+      "name": "visibleNodes",
+      "source": "fullTreeLayout",
+      "transform": [
+        { "type": "filter", "expr": "indata('treeClickStorePerm', 'id', datum.id) || (datum.is_adjusted==1 && indata('treeClickStorePerm','id', datum.parent))" }
+      ]
+    },
+    {
+      "name": "maxWidthAndHeight",
+      "source": "visibleNodes",
+      "transform": [
+        { "type": "aggregate", "groupby": ["depth"], "fields": ["depth", "x", "y"], "ops": ["count", "max", "max"], "as": ["count", "x", "y"] },
+        { "type": "aggregate", "fields": ["depth", "count", "x", "y"], "ops": ["max", "max", "max", "max"], "as": ["maxDepth", "maxNodes", "maxX", "maxY"] }
+      ]
+    },
+
+    {
+      "name": "links",
+      "source": "treeLayout",
+      "transform": [
+        { "type": "treelinks" },
+        { "type": "filter", "expr": "datum.source.depth <= 1 && datum.target.depth <= 2" },
+        {
+          "type": "linkpath",
+          "orient": "horizontal",
+          "shape": "orthogonal",
+          "sourceY": {
+            "expr": "scale('yscale', datum.source.y + nodeHeight/2 + ((indexof(datum.source.title_lower,'iwb energie france')>=0 || indexof(datum.source.title_lower,'iwb energie deutschland')>=0 || indexof(datum.source.title_lower,'iwb energie schweiz')>=0) ? countryLinkYOffset : 0))"
+          },
+          "sourceX": { "expr": "scale('xscale', datum.source.x + nodeWidth/2)" },
+          "targetY": { "expr": "scale('yscale', datum.target.y + nodeHeight/2 - 50)" },
+          "targetX": { "expr": "scale('xscale', datum.target.x + nodeWidth/2)" }
+        },
+        { "type": "filter", "expr": " indata('treeClickStorePerm', 'id', datum.target.id)" }
+      ]
+    },
+    {
+      "name": "AdjustedtreeLayout",
+      "source": "treeLayoutAdjusted",
+      "transform": [
+        { "type": "nest", "keys": ["id", "parent"], "generate": true }
+      ]
+    },
+    {
+      "name": "linksAdjusted",
+      "source": "AdjustedtreeLayout",
+      "transform": [
+        { "type": "treelinks" },
+        {
+          "type": "lookup",
+          "from": "treeLayoutAdjusted",
+          "key": "id",
+          "fields": ["target.parent"],
+          "values": ["x", "y"],
+          "as": ["p_x_stacked", "p_y_stacked"],
+          "default": null
+        },
+        {
+          "type": "lookup",
+          "from": "treeLayout",
+          "key": "id",
+          "fields": ["target.parent"],
+          "values": ["x", "y"],
+          "as": ["p_x_raw", "p_y_raw"],
+          "default": null
+        },
+        {
+          "type": "linkpath",
+          "orient": "horizontal",
+          "shape": "orthogonal",
+          "sourceY": {
+            "expr": "scale('yscale', (isValid(datum.p_y_stacked) ? datum.p_y_stacked : datum.p_y_raw) + nodeHeight/2 + ((indexof(lower(trim(reverse(split(datum.target.parent,'|'))[0])),'iwb energie france')>=0 || indexof(lower(trim(reverse(split(datum.target.parent,'|'))[0])),'iwb energie deutschland')>=0 || indexof(lower(trim(reverse(split(datum.target.parent,'|'))[0])),'iwb energie schweiz')>=0) ? countryLinkYOffset : 0))"
+          },
+          "sourceX": { "expr": "scale('xscale', (isValid(datum.p_x_stacked) ? datum.p_x_stacked : datum.p_x_raw) + nodeWidth/2)" },
+          "targetY": { "expr": "scale('yscale', datum.target.y + nodeHeight/2)" },
+          "targetX": { "expr": "scale('xscale', datum.target.x + nodeWidth/2)" }
+        },
+        { "type": "filter", "expr": "indata('treeClickStorePerm', 'id', datum.target.id)" }
+      ]
+    }
+  ],
+  "scales": [
+    { "name": "xscale", "zero": false, "domain": { "signal": "xdom" }, "range": { "signal": "xrange" } },
+    { "name": "yscale", "zero": false, "domain": { "signal": "ydom" }, "range": { "signal": "yrange" } },
+    { "name": "kpiscale", "zero": false, "domain": [0, 100], "range": { "signal": "[0,scaledNodeWidth]" } },
+    { "name": "colour", "type": "ordinal", "range": ["#002A6F", "#002A6F", "#002A6F", "#002A6F", "#002A6F"], "domain": { "data": "visibleNodes", "field": "treeParent" } }
+  ],
+  "marks": [
+    {
+      "type": "rect",
+      "from": { "data": "countriesBox" },
+      "encode": {
+        "update": {
+          "x": { "field": "bxs" },
+          "y": { "field": "bys" },
+          "width": { "field": "bws" },
+          "height": { "field": "bhs" },
+          "fill": { "value": "white" },
+          "stroke": { "value": "#002A6F" },
+          "strokeWidth": { "signal": "countryBoxStroke" },
+          "cornerRadius": { "signal": "countryBoxCorner" }
+        }
+      }
+    },
+    {
+  "type": "symbol",
+  "from": { "data": "linksCountryBusParent" },
+  "encode": {
+    "update": {
+      "x": { "field": "pxs" },
+      "y": { "field": "pys" },
+      "size": { "value": 200 },
+      "fill": { "value": "red" },
+      "stroke": { "value": "white" },
+      "strokeWidth": { "value": 2 }
+    }
+  }
+},
+{
+  "type": "symbol",
+  "from": { "data": "linksCountryBusChildren" },
+  "encode": {
+    "update": {
+      "x": { "field": "cxs" },
+      "y": { "field": "ys" },
+      "size": { "value": 200 },
+      "fill": { "value": "blue" },
+      "stroke": { "value": "white" },
+      "strokeWidth": { "value": 2 }
+    }
+  }
+},
+{
+  "type": "symbol",
+  "from": { "data": "countryBus" },
+  "encode": {
+    "update": {
+      "x": { "field": "xs" },
+      "y": { "field": "y1s" },
+      "size": { "value": 300 },
+      "fill": { "value": "green" },
+      "stroke": { "value": "white" },
+      "strokeWidth": { "value": 2 }
+    }
+  }
+},
+    
+    
+    
+    {
+      "type": "path",
+      "interactive": false,
+      "from": { "data": "links" },
+      "encode": {
+        "update": {
+          "path": { "field": "path" },
+          "strokeWidth": { "signal": "indexof(nodeHighlight, datum.target.id)> -1? 2.5:0.4" },
+          "stroke": { "scale": "colour", "signal": "reverse(pluck(treeAncestors('treeCalcs', datum.target.id), 'id'))[1]" }
+        }
+      }
+    },
+    {
+      "type": "path",
+      "interactive": false,
+      "from": { "data": "linksAdjusted" },
+      "encode": {
+        "update": {
+          "path": { "field": "path" },
+          "strokeWidth": { "signal": "indexof(nodeHighlight, datum.target.id)> -1? 2.5:0.4" },
+          "stroke": { "scale": "colour", "signal": "reverse(pluck(treeAncestors('treeCalcs', datum.target.id), 'id'))[1]" }
+        }
+      }
+    },
+    {
+      "type": "rule",
+      "zindex": 10,
+      "interactive": false,
+      "from": { "data": "countryBus" },
+      "encode": { "update": {
+        "x": { "field": "xs" }, "x2": { "field": "xs" },
+        "y": { "field": "y1s" }, "y2": { "field": "y2s" },
+        "stroke": { "value": "#002A6F" }, "strokeWidth": { "value": 1.2 }
+      } }
+    },
+        {
+      "type": "rule",
+      "zindex": 10,
+      "interactive": false,
+      "from": { "data": "linksCountryBusParent" },
+      "encode": { "update": {
+        "x": { "field": "pxs" }, "x2": { "field": "bxs" },
+        "y": { "field": "pys" }, "y2": { "field": "pys" },
+        "stroke": { "value": "#002A6F" }, "strokeWidth": { "value": 0.8 }
+      } }
+    },
+    {
+      "type": "rule",
+      "zindex": 10,
+      "interactive": false,
+      "from": { "data": "linksCountryBusChildren" },
+      "encode": { "update": {
+        "x": { "field": "bxs" }, "x2": { "field": "cxs" },
+        "y": { "field": "ys" }, "y2": { "field": "ys" },
+        "stroke": { "value": "#002A6F" }, "strokeWidth": { "value": 0.8 }
+      } }
+    },
+    {
+      "type": "rule",
+      "zindex": 10,
+      "interactive": false,
+      "from": { "data": "iwbVerticalStubs" },
+      "encode": { "update": {
+        "x": { "field": "xs" }, "x2": { "field": "xs" },
+        "y": { "field": "y1s" }, "y2": { "field": "y2s" },
+        "stroke": { "value": "#002A6F" }, "strokeWidth": { "value": 0.8 }
+      } }
+    },
+        
+    {
+      "type": "text",
+      "from": { "data": "countriesBox" },
+      "encode": {
+        "update": {
+          "x": { "signal": "datum.bxs + datum.bws/2" },
+          "y": { "signal": "datum.bys + datum.bhs - 20" },
+          "align": { "value": "center" },
+          "baseline": { "value": "top" },
+          "text": { "value": "Länderholding" },
+          "font": { "value": "Calibri" },
+          "fontSize": { "signal": "countryBoxLabelSize" },
+          "fontWeight": { "value": "bold" },
+          "fill": { "value": "#002A6F" }
+        }
+      }
+    },
+    {
+      "name": "node",
+      "description": "The parent node",
+      "type": "group",
+      "clip": false,
+      "from": { "data": "visibleNodes" },
+      "encode": {
+        "update": {
+          "xc": { "signal": "scale('xscale', datum.x + nodeWidth/2)" },
+          "width": {
+            "signal": "datum.depth==0 ? scaledNodeWidth*5 : (datum.title=='IWB Renewable Power AG' ? scaledNodeWidth*3.6 : ((indexof(lower(trim(reverse(split(datum.parent,'|'))[0])),'iwb energie france')>=0 || indexof(lower(trim(reverse(split(datum.parent,'|'))[0])),'iwb energie deutschland')>=0 || indexof(lower(trim(reverse(split(datum.parent,'|'))[0])),'iwb energie schweiz')>=0) ? scaledNodeWidth*countryChildrenExtraGap : scaledNodeWidth))"
+          },
+          "yc": { "field": "y", "scale": "yscale" },
+          "height": {
+            "signal": "datum.depth==0 ? scaledNodeHeight*1.25 : (datum.title=='IWB Renewable Power AG' ? scaledNodeHeight*1.15 : ((indexof(lower(trim(reverse(split(datum.parent,'|'))[0])),'iwb energie france')>=0 || indexof(lower(trim(reverse(split(datum.parent,'|'))[0])),'iwb energie deutschland')>=0 || indexof(lower(trim(reverse(split(datum.parent,'|'))[0])),'iwb energie schweiz')>=0) ? scaledNodeHeight*countryChildHeightFactor : scaledNodeHeight))"
+          },
+          "fill": { "value": "white" },
+          "stroke": { "signal": "merge(hsl(scale('colour', datum.treeParent)), {l:0.79})" },
+          "cornerRadius": { "value": 2 },
+          "cursor": { "signal": "datum.children>0?'pointer':''" },
+          "tooltip": { "signal": "" }
+        }
+      },
+      "marks": [
+        {
+          "name": "highlight",
+          "description": "highlight (seems like a Vega bug as this doens't work on the group element)",
+          "type": "rect",
+          "interactive": false,
+          "encode": {
+            "update": {
+              "x": { "signal": "item.mark.group.x1" },
+              "y": { "signal": "0" },
+              "fill": { "signal": "indexof(nodeHighlight, parent.id)> -1? merge(hsl(scale('colour', parent.treeParent)), {l:0.82}):0" },
+              "stroke": { "signal": "indexof(nodeHighlight, parent.id)> -1? merge(hsl(scale('colour', parent.treeParent)), {l:0.79}):0" },
+              "height": { "signal": "item.mark.group.height" },
+              "width": { "signal": "item.mark.group.width" }
+            }
+          }
+        },
+        {
+          "name": "KPI background",
+          "description": "KPI background",
+          "type": "rect",
+          "interactive": false,
+          "clip": false,
+          "encode": {
+            "update": {
+              "x": { "signal": "item.mark.group.x1" },
+              "y": { "signal": "item.mark.group.height-scaledKPIHeight" },
+              "height": { "signal": "scaledKPIHeight" },
+              "width": { "signal": "(item.mark.group.width)" },
+              "fill": { "scale": "colour", "signal": "parent.treeParent" },
+              "opacity": { "value": 0.2 }
+            }
+          }
+        },
+        {
+          "name": "KPI",
+          "description": "KPI",
+          "type": "rect",
+          "interactive": false,
+          "clip": false,
+          "encode": {
+            "update": {
+              "x": { "signal": "item.mark.group.x1" },
+              "y": { "signal": "item.mark.group.height-scaledKPIHeight" },
+              "height": { "signal": "scaledKPIHeight" },
+              "width": { "signal": "scale('kpiscale',parent.kpi)" },
+              "fill": { "scale": "colour", "signal": "parent.treeParent" }
+            }
+          }
+        },
+        {
+          "type": "text",
+          "interactive": false,
+          "name": "name",
+          "encode": {
+            "update": {
+              "x": { "signal": "item.mark.group.width/2" },
+              "y": { "signal": "(22 / span(xdom)) * width" },
+              "align": { "value": "center" },
+              "fontWeight": { "value": "800" },
+              "baseline": { "value": "top" },
+              "fill": { "scale": "colour", "signal": "parent.treeParent" },
+              "text": { "signal": "parent.title_wrapped" },
+              "lineBreak": { "value": "\n" },
+              "lineHeight": { "signal": "scaledFont13 * 1.15" },
+              "fontSize": { "signal": "scaledFont13" },
+              "limit": { "signal": "scaledNodeWidth-scaledLimit" },
+              "font": { "value": "Calibri" }
+            }
+          }
+        },
+        {
+          "type": "text",
+          "interactive": false,
+          "name": "person",
+          "encode": {
+            "update": {
+              "x": { "signal": "item.mark.group.width/2" },
+              "y": { "signal": "(22 / span(xdom)) * width + (scaledFont13 * 1.2)" },
+              "align": { "value": "center" },
+              "baseline": { "value": "top" },
+              "fill": { "scale": "colour", "signal": "parent.treeParent" },
+              "text": { "signal": "parent.person" },
+              "fontSize": { "signal": "scaledFont11" },
+              "font": { "value": "Calibri" }
+            }
+          }
+        },
+        {
+          "type": "text",
+          "interactive": false,
+          "name": "node children",
+          "encode": {
+            "update": {
+              "x": { "signal": "item.mark.group.width - (9/ span(xdom))*width" },
+              "y": { "signal": "item.mark.group.height/2" },
+              "align": { "value": "right" },
+              "baseline": { "value": "middle" },
+              "fill": { "scale": "colour", "signal": "parent.treeParent" },
+              "text": { "signal": "parent.children>0?parent.children:''" },
+              "fontSize": { "signal": "scaledFont12" },
+              "font": { "value": "Calibri" }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
