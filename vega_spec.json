@@ -254,7 +254,7 @@
     { "name": "linksAdjusted", "source": "AdjustedtreeLayout", "transform": [
       { "type": "treelinks" },
       { "type": "linkpath", "orient": "horizontal", "shape": "diagonal", "sourceY": { "expr": "scale('yscale', datum.target.parent_y + nodeHeight/2 + ((indexof(lower(trim(reverse(split(datum.target.parent,'|'))[0])),'iwb energie france')>=0 || indexof(lower(trim(reverse(split(datum.target.parent,'|'))[0])),'iwb energie deutschland')>=0 || indexof(lower(trim(reverse(split(datum.target.parent,'|'))[0])),'iwb energie schweiz')>=0) ? countryLinkYOffset : 0))" }, "sourceX": { "expr": "scale('xscale', datum.target.parent_x + nodeWidth/2)" }, "targetY": { "expr": "scale('yscale', datum.target.y + nodeHeight/2)" }, "targetX": { "expr": "scale('xscale', datum.target.x + nodeWidth/2)" } },
-      { "type": "filter", "expr": " indata('treeClickStorePerm', 'id', datum.target.id)" }
+      { "type": "filter", "expr": " indata('treeClickStorePerm', 'id', datum.target.id) && datum.target.depth <= 4" }
     ] }
   ],
   "scales": [
