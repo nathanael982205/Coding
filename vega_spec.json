@@ -101,23 +101,33 @@
   "data": [
     { "name": "dataset" },
     { "name": "wideToTallBase", "source": "dataset", "transform": [
-      { "type": "formula", "expr": "{key: datum['level1'], parent: null, person: datum['person'], kpi: datum['kpi'], LevelId: 1}", "as": "l1" },
-      { "type": "formula", "expr": "{key: datum['level1'] + '|' + datum['level2'], parent: datum['level1'], person: datum['person'], kpi: datum['kpi'], LevelId: 2}", "as": "l2" },
-      { "type": "formula", "expr": "{key: datum['level1'] + '|' + datum['level2'] + '|' + datum['level3'], parent: datum['level1'] + '|' + datum['level2'], person: datum['person'], kpi: datum['kpi'], LevelId: 3}", "as": "l3" },
-      { "type": "formula", "expr": "{key: datum['level1'] + '|' + datum['level2'] + '|' + datum['level3'] + '|' + datum['level4'], parent: datum['level1'] + '|' + datum['level2'] + '|' + datum['level3'], person: datum['person'], kpi: datum['kpi'], LevelId: 4}", "as": "l4" },
-      { "type": "formula", "expr": "{key: datum['level1'] + '|' + datum['level2'] + '|' + datum['level3'] + '|' + datum['level4'] + '|' + datum['level5'], parent: datum['level1'] + '|' + datum['level2'] + '|' + datum['level3'] + '|' + datum['level4'], person: datum['person'], kpi: datum['kpi'], LevelId: 5}", "as": "l5" },
-      { "type": "formula", "expr": "{key: datum['level1'] + '|' + datum['level2'] + '|' + datum['level3'] + '|' + datum['level4'] + '|' + datum['level5'] + '|' + datum['level6'], parent: datum['level1'] + '|' + datum['level2'] + '|' + datum['level3'] + '|' + datum['level4'] + '|' + datum['level5'], person: datum['person'], kpi: datum['kpi'], LevelId: 6}", "as": "l6" },
-      { "type": "fold", "fields": ["l1", "l2", "l3", "l4", "l5", "l6"] },
+      // Process horizontal levels - only if values exist
+      { "type": "formula", "expr": "isValid(datum['horizontal_level_1']) ? {key: datum['horizontal_level_1'], parent: null, person: datum['person'], kpi: datum['kpi'], LevelId: 1, displayType: 'horizontal'} : null", "as": "h1" },
+      { "type": "formula", "expr": "isValid(datum['horizontal_level_1']) && isValid(datum['horizontal_level_2']) ? {key: datum['horizontal_level_1'] + '|' + datum['horizontal_level_2'], parent: datum['horizontal_level_1'], person: datum['person'], kpi: datum['kpi'], LevelId: 2, displayType: 'horizontal'} : null", "as": "h2" },
+      { "type": "formula", "expr": "isValid(datum['horizontal_level_1']) && isValid(datum['horizontal_level_2']) && isValid(datum['horizontal_level_3']) ? {key: datum['horizontal_level_1'] + '|' + datum['horizontal_level_2'] + '|' + datum['horizontal_level_3'], parent: datum['horizontal_level_1'] + '|' + datum['horizontal_level_2'], person: datum['person'], kpi: datum['kpi'], LevelId: 3, displayType: 'horizontal'} : null", "as": "h3" },
+      { "type": "formula", "expr": "isValid(datum['horizontal_level_1']) && isValid(datum['horizontal_level_2']) && isValid(datum['horizontal_level_3']) && isValid(datum['horizontal_level_4']) ? {key: datum['horizontal_level_1'] + '|' + datum['horizontal_level_2'] + '|' + datum['horizontal_level_3'] + '|' + datum['horizontal_level_4'], parent: datum['horizontal_level_1'] + '|' + datum['horizontal_level_2'] + '|' + datum['horizontal_level_3'], person: datum['person'], kpi: datum['kpi'], LevelId: 4, displayType: 'horizontal'} : null", "as": "h4" },
+      { "type": "formula", "expr": "isValid(datum['horizontal_level_1']) && isValid(datum['horizontal_level_2']) && isValid(datum['horizontal_level_3']) && isValid(datum['horizontal_level_4']) && isValid(datum['horizontal_level_5']) ? {key: datum['horizontal_level_1'] + '|' + datum['horizontal_level_2'] + '|' + datum['horizontal_level_3'] + '|' + datum['horizontal_level_4'] + '|' + datum['horizontal_level_5'], parent: datum['horizontal_level_1'] + '|' + datum['horizontal_level_2'] + '|' + datum['horizontal_level_3'] + '|' + datum['horizontal_level_4'], person: datum['person'], kpi: datum['kpi'], LevelId: 5, displayType: 'horizontal'} : null", "as": "h5" },
+      
+      // Process vertical levels - only if values exist
+      { "type": "formula", "expr": "isValid(datum['vertical_level_1']) ? {key: datum['vertical_level_1'], parent: null, person: datum['person'], kpi: datum['kpi'], LevelId: 1, displayType: 'vertical'} : null", "as": "v1" },
+      { "type": "formula", "expr": "isValid(datum['vertical_level_1']) && isValid(datum['vertical_level_2']) ? {key: datum['vertical_level_1'] + '|' + datum['vertical_level_2'], parent: datum['vertical_level_1'], person: datum['person'], kpi: datum['kpi'], LevelId: 2, displayType: 'vertical'} : null", "as": "v2" },
+      { "type": "formula", "expr": "isValid(datum['vertical_level_1']) && isValid(datum['vertical_level_2']) && isValid(datum['vertical_level_3']) ? {key: datum['vertical_level_1'] + '|' + datum['vertical_level_2'] + '|' + datum['vertical_level_3'], parent: datum['vertical_level_1'] + '|' + datum['vertical_level_2'], person: datum['person'], kpi: datum['kpi'], LevelId: 3, displayType: 'vertical'} : null", "as": "v3" },
+      { "type": "formula", "expr": "isValid(datum['vertical_level_1']) && isValid(datum['vertical_level_2']) && isValid(datum['vertical_level_3']) && isValid(datum['vertical_level_4']) ? {key: datum['vertical_level_1'] + '|' + datum['vertical_level_2'] + '|' + datum['vertical_level_3'] + '|' + datum['vertical_level_4'], parent: datum['vertical_level_1'] + '|' + datum['vertical_level_2'] + '|' + datum['vertical_level_3'], person: datum['person'], kpi: datum['kpi'], LevelId: 4, displayType: 'vertical'} : null", "as": "v4" },
+      { "type": "formula", "expr": "isValid(datum['vertical_level_1']) && isValid(datum['vertical_level_2']) && isValid(datum['vertical_level_3']) && isValid(datum['vertical_level_4']) && isValid(datum['vertical_level_5']) ? {key: datum['vertical_level_1'] + '|' + datum['vertical_level_2'] + '|' + datum['vertical_level_3'] + '|' + datum['vertical_level_4'] + '|' + datum['vertical_level_5'], parent: datum['vertical_level_1'] + '|' + datum['vertical_level_2'] + '|' + datum['vertical_level_3'] + '|' + datum['vertical_level_4'], person: datum['person'], kpi: datum['kpi'], LevelId: 5, displayType: 'vertical'} : null", "as": "v5" },
+      
+      { "type": "fold", "fields": ["h1", "h2", "h3", "h4", "h5", "v1", "v2", "v3", "v4", "v5"] },
       { "type": "project", "fields": ["key", "value"] },
       { "type": "formula", "expr": "datum.value.key", "as": "id" },
       { "type": "formula", "expr": "reverse(split(datum.value.key,'|'))[0]", "as": "title" },
       { "type": "formula", "expr": "datum.value.parent", "as": "parent" },
-      { "type": "formula", "expr": "datum['level2']", "as": "LevelId" },
-      { "type": "filter", "expr": "datum.title != 'null' && datum.title != 'undefined'" },
+      { "type": "formula", "expr": "datum.value.LevelId", "as": "LevelId" },
+      { "type": "formula", "expr": "datum.value.displayType", "as": "displayType" },
+      { "type": "filter", "expr": "isValid(datum.value) && datum.title != 'null' && datum.title != 'undefined'" },
       { "type": "aggregate", "groupby": ["id", "parent", "title", "value"] },
       { "type": "formula", "expr": "datum.value.person", "as": "person" },
       { "type": "formula", "expr": "datum.value.kpi", "as": "kpi" },
-      { "type": "formula", "expr": "datum.value.LevelId", "as": "LevelId" }
+      { "type": "formula", "expr": "datum.value.LevelId", "as": "LevelId" },
+      { "type": "formula", "expr": "datum.value.displayType", "as": "displayType" }
     ] },
     { "name": "wideToTall", "source": "wideToTallBase", "transform": [
       { "type": "filter", "expr": "datum.LevelId <= 6" }
@@ -136,7 +146,7 @@
       { "type": "window", "sort": { "field": "id", "order": "ascending" }, "ops": ["dense_rank"], "fields": ["id"], "groupby": ["parent"], "as": ["d_rank"] },
       { "type": "formula", "expr": "lower(trim(reverse(split(datum.parent,'|'))[0]))", "as": "parent_title_lower" },
       { "type": "formula", "expr": "lower(trim(reverse(split(datum.id,'|'))[0]))", "as": "id_title_lower" },
-      { "type": "formula", "expr": "((datum.depth >= 3 && (indexof(datum.parent_title_lower,'iwb energie deutschland')>=0 || indexof(datum.parent_title_lower,'iwb energie france')>=0 || indexof(datum.parent_title_lower,'iwb energie schweiz')>=0)) || indexof(datum.id_title_lower,'juvent sa')>=0 || indexof(datum.id_title_lower,'swisspower green gas')>=0) && indexof(datum.id_title_lower,'windpark grosse schanze')==-1", "as": "stackMe" },
+      { "type": "formula", "expr": "datum.displayType == 'vertical'", "as": "stackMe" },
       { "type": "formula", "expr": "datum.x", "as": "x" },
       { "type": "formula", "expr": "datum.y", "as": "y" },
       { "type": "formula", "expr": "scale('xscale', datum.x)", "as": "xscaled" },
@@ -184,10 +194,7 @@
       { "as": "parent", "type": "formula", "expr": "datum.parent" }
     ] },
     { "name": "countriesBox", "source": "treeLayout", "transform": [
-      { "type": "formula", "expr": "lower(trim(reverse(split(datum.parent,'|'))[0]))", "as": "parent_title_lower" },
-      { "type": "formula", "expr": "lower(trim(reverse(split(datum.id,'|'))[0]))", "as": "id_title_lower" },
-      { "type": "filter", "expr": "indexof(datum.parent_title_lower,'iwb renewable power ag')>=0" },
-      { "type": "filter", "expr": "indexof(datum.id_title_lower,'iwb energie france')>=0 || indexof(datum.id_title_lower,'iwb energie deutschland')>=0 || indexof(datum.id_title_lower,'iwb energie schweiz')>=0" },
+      { "type": "filter", "expr": "datum.displayType == 'vertical' && datum.LevelId == 2" },
       { "type": "aggregate", "fields": ["x", "x", "y", "y"], "ops": ["min", "max", "min", "max"], "as": ["minx", "maxx", "miny", "maxy"] },
       { "type": "formula", "expr": "datum.minx - 20", "as": "bx" },
       { "type": "formula", "expr": "datum.miny - 30", "as": "by" },
@@ -202,7 +209,7 @@
       { "type": "filter", "expr": "datum.stackMe" },
       { "type": "lookup", "from": "treeLayout", "key": "id", "fields": ["parent"], "values": ["x", "y"], "as": ["parent_x", "parent_y"], "default": "null" },
       { "type": "window", "sort": { "field": "id", "order": "ascending" }, "ops": ["dense_rank"], "fields": ["id"], "groupby": ["parent"], "as": ["d_rank"] },
-      { "type": "formula", "as": "x", "expr": "( (indexof(datum.id_title_lower,'juvent sa')>=0 || indexof(datum.id_title_lower,'swisspower green gas')>=0) ? datum.parent_x + nodeWidth + 600 : datum.parent_x ) + ( ( (indexof(datum.parent_title_lower,'iwb energie france')>=0 || indexof(datum.parent_title_lower,'iwb energie deutschland')>=0 || indexof(datum.parent_title_lower,'iwb energie schweiz')>=0) ? nodeWidth*countryChildrenExtraGap : nodeWidth ) - nodeWidth )/2" },
+      { "type": "formula", "as": "x", "expr": "datum.parent_x + ((nodeWidth*countryChildrenExtraGap - nodeWidth)/2)" },
       { "type": "formula", "expr": "datum.parent_y + nodeHeight + (datum.d_rank + 1) * (nodeHeight + 8)", "as": "y" },
       { "type": "formula", "expr": "scale('xscale', datum.x)", "as": "xscaled" },
       { "type": "formula", "expr": "scale('yscale', datum.y)", "as": "yscaled" }

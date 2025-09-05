@@ -1,0 +1,65 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "description": "Debug Organigram IWB",
+  "width": 1200,
+  "height": 800,
+  "background": "white",
+  "padding": 50,
+  "signals": [
+    { "name": "nodeWidth", "value": 200 },
+    { "name": "nodeHeight", "value": 50 }
+  ],
+  "data": [
+    { 
+      "name": "dataset",
+      "values": [
+        {
+          "horizontal_level_1": "IWB Industrielle Werke Basel",
+          "horizontal_level_2": "IWB Renewable Power AG",
+          "horizontal_level_3": null,
+          "horizontal_level_4": null,
+          "horizontal_level_5": null,
+          "vertical_level_1": "IWB Renewable Power AG",
+          "vertical_level_2": "IWB Energie France SAS",
+          "vertical_level_3": "Test Company",
+          "vertical_level_4": null,
+          "vertical_level_5": null,
+          "person": "Test Person",
+          "kpi": 75
+        }
+      ]
+    },
+    { 
+      "name": "wideToTallBase", 
+      "source": "dataset", 
+      "transform": [
+        { "type": "formula", "expr": "{key: datum['horizontal_level_1'], parent: null, person: datum['person'], kpi: datum['kpi'], LevelId: 1, displayType: 'horizontal'}", "as": "h1" },
+        { "type": "formula", "expr": "{key: datum['horizontal_level_1'] + '|' + datum['horizontal_level_2'], parent: datum['horizontal_level_1'], person: datum['person'], kpi: datum['kpi'], LevelId: 2, displayType: 'horizontal'}", "as": "h2" },
+        { "type": "formula", "expr": "{key: datum['vertical_level_1'], parent: null, person: datum['person'], kpi: datum['kpi'], LevelId: 1, displayType: 'vertical'}", "as": "v1" },
+        { "type": "formula", "expr": "{key: datum['vertical_level_1'] + '|' + datum['vertical_level_2'], parent: datum['vertical_level_1'], person: datum['person'], kpi: datum['kpi'], LevelId: 2, displayType: 'vertical'}", "as": "v2" },
+        { "type": "fold", "fields": ["h1", "h2", "v1", "v2"] },
+        { "type": "project", "fields": ["key", "value"] },
+        { "type": "formula", "expr": "datum.value.key", "as": "id" },
+        { "type": "formula", "expr": "reverse(split(datum.value.key,'|'))[0]", "as": "title" },
+        { "type": "formula", "expr": "datum.value.parent", "as": "parent" },
+        { "type": "formula", "expr": "datum.value.displayType", "as": "displayType" },
+        { "type": "filter", "expr": "datum.title != 'null' && datum.title != 'undefined' && datum.title != null" }
+      ] 
+    }
+  ],
+  "marks": [
+    {
+      "type": "text",
+      "from": { "data": "wideToTallBase" },
+      "encode": {
+        "update": {
+          "x": { "signal": "datum.displayType == 'horizontal' ? 100 : 300" },
+          "y": { "signal": "data('wideToTallBase').indexOf(datum) * 30 + 50" },
+          "text": { "signal": "datum.title + ' (' + datum.displayType + ')'" },
+          "fontSize": { "value": 12 },
+          "fill": { "signal": "datum.displayType == 'horizontal' ? 'blue' : 'red'" }
+        }
+      }
+    }
+  ]
+}

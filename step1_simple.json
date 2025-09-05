@@ -1,0 +1,101 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "description": "IWB Organigram - Schritt 1: Erstes Kästchen",
+  "width": 800,
+  "height": 400,
+  "background": "white",
+  "padding": 50,
+  
+  "signals": [
+    { "name": "nodeWidth", "value": 300 },
+    { "name": "nodeHeight", "value": 70 }
+  ],
+  
+  "data": [
+    { 
+      "name": "dataset",
+      "values": [
+        {
+          "horizontal_level_1": "IWB Industrielle Werke Basel",
+          "vertical_level_1": null,
+          "person": "CEO Name",
+          "kpi": 90
+        }
+      ]
+    },
+    { 
+      "name": "nodes", 
+      "source": "dataset", 
+      "transform": [
+        { "type": "formula", "expr": "datum.horizontal_level_1", "as": "title" },
+        { "type": "formula", "expr": "datum.person", "as": "person" },
+        { "type": "formula", "expr": "datum.kpi", "as": "kpi" },
+        { "type": "formula", "expr": "400", "as": "x" },
+        { "type": "formula", "expr": "200", "as": "y" }
+      ] 
+    }
+  ],
+  
+  "marks": [
+    {
+      "name": "node",
+      "type": "group",
+      "from": { "data": "nodes" },
+      "encode": {
+        "update": {
+          "x": { "field": "x" },
+          "y": { "field": "y" },
+          "width": { "signal": "nodeWidth" },
+          "height": { "signal": "nodeHeight" },
+          "fill": { "value": "white" },
+          "stroke": { "value": "#002A6F" },
+          "strokeWidth": { "value": 2 },
+          "cornerRadius": { "value": 5 }
+        }
+      },
+      "marks": [
+        {
+          "type": "text",
+          "encode": {
+            "update": {
+              "x": { "signal": "nodeWidth/2" },
+              "y": { "value": 25 },
+              "text": { "signal": "parent.title" },
+              "align": { "value": "center" },
+              "baseline": { "value": "middle" },
+              "fontSize": { "value": 16 },
+              "fontWeight": { "value": "bold" },
+              "fill": { "value": "#002A6F" }
+            }
+          }
+        },
+        {
+          "type": "text",
+          "encode": {
+            "update": {
+              "x": { "signal": "nodeWidth/2" },
+              "y": { "value": 45 },
+              "text": { "signal": "parent.person" },
+              "align": { "value": "center" },
+              "baseline": { "value": "middle" },
+              "fontSize": { "value": 12 },
+              "fill": { "value": "#002A6F" }
+            }
+          }
+        },
+        {
+          "type": "rect",
+          "encode": {
+            "update": {
+              "x": { "value": 10 },
+              "y": { "signal": "nodeHeight - 8" },
+              "width": { "signal": "(nodeWidth - 20) * parent.kpi / 100" },
+              "height": { "value": 4 },
+              "fill": { "value": "#002A6F" }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "description": "Simple Test",
+  "width": 800,
+  "height": 600,
+  "background": "white",
+  "padding": 20,
+  "data": [
+    { 
+      "name": "dataset",
+      "values": [
+        {
+          "horizontal_level_1": "IWB Industrielle Werke Basel",
+          "horizontal_level_2": "IWB Renewable Power AG",
+          "horizontal_level_3": null,
+          "vertical_level_1": "IWB Renewable Power AG", 
+          "vertical_level_2": "IWB Energie France SAS",
+          "vertical_level_3": null,
+          "person": "Max Mustermann",
+          "kpi": 85
+        }
+      ]
+    },
+    { 
+      "name": "processed", 
+      "source": "dataset", 
+      "transform": [
+        { "type": "formula", "expr": "isValid(datum['horizontal_level_1']) ? {key: datum['horizontal_level_1'], parent: null, person: datum['person'], displayType: 'horizontal', LevelId: 1} : null", "as": "h1" },
+        { "type": "formula", "expr": "isValid(datum['horizontal_level_2']) ? {key: datum['horizontal_level_1'] + '|' + datum['horizontal_level_2'], parent: datum['horizontal_level_1'], person: datum['person'], displayType: 'horizontal', LevelId: 2} : null", "as": "h2" },
+        { "type": "formula", "expr": "isValid(datum['vertical_level_1']) ? {key: datum['vertical_level_1'], parent: null, person: datum['person'], displayType: 'vertical', LevelId: 1} : null", "as": "v1" },
+        { "type": "formula", "expr": "isValid(datum['vertical_level_2']) ? {key: datum['vertical_level_1'] + '|' + datum['vertical_level_2'], parent: datum['vertical_level_1'], person: datum['person'], displayType: 'vertical', LevelId: 2} : null", "as": "v2" },
+        { "type": "fold", "fields": ["h1", "h2", "v1", "v2"] },
+        { "type": "filter", "expr": "isValid(datum.value)" },
+        { "type": "formula", "expr": "datum.value.key", "as": "id" },
+        { "type": "formula", "expr": "reverse(split(datum.value.key,'|'))[0]", "as": "title" },
+        { "type": "formula", "expr": "datum.value.parent", "as": "parent" },
+        { "type": "formula", "expr": "datum.value.displayType", "as": "displayType" },
+        { "type": "formula", "expr": "datum.value.LevelId", "as": "LevelId" }
+      ] 
+    }
+  ],
+  "marks": [
+    {
+      "type": "text",
+      "from": { "data": "processed" },
+      "encode": {
+        "update": {
+          "x": { "signal": "datum.displayType == 'horizontal' ? 50 : 400" },
+          "y": { "signal": "data('processed').indexOf(datum) * 40 + 50" },
+          "text": { "signal": "datum.title + ' (' + datum.displayType + ', Level ' + datum.LevelId + ')'" },
+          "fontSize": { "value": 14 },
+          "fill": { "signal": "datum.displayType == 'horizontal' ? 'blue' : 'red'" }
+        }
+      }
+    }
+  ]
+}
