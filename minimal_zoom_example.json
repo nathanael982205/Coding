@@ -1,0 +1,200 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "width": 800,
+  "height": 500,
+  "padding": 5,
+  
+  "data": [
+    {
+      "name": "mydata",
+      "values": [
+        {"x": 1, "y": 10},
+        {"x": 2, "y": 30},
+        {"x": 3, "y": 25},
+        {"x": 4, "y": 40},
+        {"x": 5, "y": 35},
+        {"x": 6, "y": 20},
+        {"x": 7, "y": 45},
+        {"x": 8, "y": 50},
+        {"x": 9, "y": 30},
+        {"x": 10, "y": 35}
+      ]
+    }
+  ],
+  
+  "signals": [
+    {
+      "name": "detailDomain"
+    },
+    {
+      "name": "brush", "value": [0, 0],
+      "on": [
+        {
+          "events": "@overview:pointerdown",
+          "update": "[x(), x()]"
+        },
+        {
+          "events": "[@overview:pointerdown, window:pointerup] > window:pointermove!",
+          "update": "[brush[0], clamp(x(), 0, width)]"
+        },
+        {
+          "events": {"signal": "delta"},
+          "update": "clampRange([anchor[0] + delta, anchor[1] + delta], 0, width)"
+        }
+      ]
+    },
+    {
+      "name": "anchor", "value": null,
+      "on": [{"events": "@brush:pointerdown", "update": "slice(brush)"}]
+    },
+    {
+      "name": "xdown", "value": 0,
+      "on": [{"events": "@brush:pointerdown", "update": "x()"}]
+    },
+    {
+      "name": "delta", "value": 0,
+      "on": [
+        {
+          "events": "[@brush:pointerdown, window:pointerup] > window:pointermove!",
+          "update": "x() - xdown"
+        }
+      ]
+    }
+  ],
+  
+  "marks": [
+    {
+      "type": "group",
+      "name": "detail",
+      "encode": {
+        "enter": { 
+          "width": {"value": 800}, 
+          "height": {"value": 300},
+          "x": {"value": 0},
+          "y": {"value": 0}
+        }
+      },
+      "scales": [
+        {
+          "name": "xDetail", 
+          "type": "linear", 
+          "range": "width",
+          "domain": {"data": "mydata", "field": "x"},
+          "domainRaw": {"signal": "detailDomain"}
+        },
+        {
+          "name": "yDetail",
+          "type": "linear",
+          "range": [300, 0],
+          "domain": {"data": "mydata", "field": "y"},
+          "nice": true
+        }
+      ],
+      "axes": [
+        {"orient": "bottom", "scale": "xDetail", "title": "X-Achse"},
+        {"orient": "left", "scale": "yDetail", "title": "Y-Achse"}
+      ],
+      "marks": [
+        {
+          "type": "group",
+          "encode": {
+            "enter": {
+              "width": {"field": {"group": "width"}},
+              "height": {"field": {"group": "height"}},
+              "clip": {"value": true}
+            }
+          },
+          "marks": [
+            {
+              "type": "line",
+              "from": {"data": "mydata"},
+              "encode": {
+                "update": {
+                  "x": {"scale": "xDetail", "field": "x"},
+                  "y": {"scale": "yDetail", "field": "y"},
+                  "stroke": {"value": "steelblue"},
+                  "strokeWidth": {"value": 2}
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "group",
+      "name": "overview",
+      "signals": [
+        {
+          "name": "detailDomain",
+          "push": "outer",
+          "on": [
+            {
+              "events": {"signal": "brush"},
+              "update": "brush[0] !== brush[1] ? invert('xOverview', brush) : null"
+            }
+          ]
+        }
+      ],
+      "encode": {
+        "enter": {
+          "x": {"value": 0},
+          "y": {"value": 340},
+          "width": {"value": 800},
+          "height": {"value": 60},
+          "fill": {"value": "transparent"}
+        }
+      },
+      "scales": [
+        {
+          "name": "xOverview",
+          "type": "linear",
+          "range": "width",
+          "domain": {"data": "mydata", "field": "x"}
+        },
+        {
+          "name": "yOverview",
+          "type": "linear",
+          "range": [60, 0],
+          "domain": {"data": "mydata", "field": "y"},
+          "nice": true
+        }
+      ],
+      "axes": [
+        {"orient": "bottom", "scale": "xOverview"}
+      ],
+      "marks": [
+        {
+          "type": "line",
+          "interactive": false,
+          "from": {"data": "mydata"},
+          "encode": {
+            "update": {
+              "x": {"scale": "xOverview", "field": "x"},
+              "y": {"scale": "yOverview", "field": "y"},
+              "stroke": {"value": "steelblue"},
+              "strokeOpacity": {"value": 0.3}
+            }
+          }
+        },
+        {
+          "type": "rect",
+          "name": "brush",
+          "encode": {
+            "enter": {
+              "y": {"value": 0},
+              "height": {"value": 60},
+              "fill": {"value": "#333"},
+              "fillOpacity": {"value": 0.2},
+              "cursor": {"value": "move"}
+            },
+            "update": {
+              "x": {"signal": "brush[0]"},
+              "x2": {"signal": "brush[1]"}
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
