@@ -1,0 +1,311 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "description": "Wind Power and Wind Speed Visualization",
+  "width": 800,
+  "height": 400,
+  "padding": 5,
+  "background": "#f8f8f8",
+  
+  "signals": [
+    {
+      "name": "xrange",
+      "update": "[0, width]"
+    },
+    {
+      "name": "yrange",
+      "update": "[0, height]"
+    },
+    {
+      "name": "down",
+      "value": null,
+      "on": [
+        {"events": "touchend", "update": "null"},
+        {"events": "mousedown, touchstart", "update": "xy()"}
+      ]
+    },
+    {
+      "name": "xcur",
+      "value": null,
+      "on": [
+        {"events": "mousedown, touchstart, touchend", "update": "slice(xdom)"}
+      ]
+    },
+    {
+      "name": "ycur",
+      "value": null,
+      "on": [
+        {"events": "mousedown, touchstart, touchend", "update": "slice(ydom)"}
+      ]
+    },
+    {
+      "name": "delta",
+      "value": [0, 0],
+      "on": [
+        {
+          "events": [
+            {
+              "source": "window",
+              "type": "mousemove",
+              "consume": true,
+              "between": [
+                {"type": "mousedown"},
+                {"source": "window", "type": "mouseup"}
+              ]
+            },
+            {
+              "type": "touchmove",
+              "consume": true,
+              "filter": "event.touches.length === 1"
+            }
+          ],
+          "update": "down ? [down[0]-x(), down[1]-y()] : [0,0]"
+        }
+      ]
+    },
+    {
+      "name": "anchor",
+      "value": [0, 0],
+      "on": [
+        {"events": "wheel", "update": "[invert('xscale', x()), invert('yscale', y())]"},
+        {
+          "events": {"type": "touchstart", "filter": "event.touches.length===2"},
+          "update": "[(xdom[0] + xdom[1]) / 2, (ydom[0] + ydom[1]) / 2]"
+        }
+      ]
+    },
+    {
+      "name": "zoom",
+      "value": 1,
+      "on": [
+        {
+          "events": "wheel!",
+          "force": true,
+          "update": "pow(1.001, event.deltaY * pow(16, event.deltaMode))"
+        },
+        {
+          "events": {"signal": "dist2"},
+          "force": true,
+          "update": "dist1 / dist2"
+        }
+      ]
+    },
+    {
+      "name": "dist1",
+      "value": 0,
+      "on": [
+        {
+          "events": {"type": "touchstart", "filter": "event.touches.length===2"},
+          "update": "pinchDistance(event)"
+        },
+        {
+          "events": {"signal": "dist2"},
+          "update": "dist2"
+        }
+      ]
+    },
+    {
+      "name": "dist2",
+      "value": 0,
+      "on": [
+        {
+          "events": {"type": "touchmove", "consume": true, "filter": "event.touches.length===2"},
+          "update": "pinchDistance(event)"
+        }
+      ]
+    },
+    {
+      "name": "xdom",
+      "update": "null",
+      "on": [
+        {
+          "events": {"signal": "delta"},
+          "update": "[xcur[0] + span(xcur) * delta[0] / width, xcur[1] + span(xcur) * delta[0] / width]"
+        },
+        {
+          "events": {"signal": "zoom"},
+          "update": "[anchor[0] + (xdom[0] - anchor[0]) * zoom, anchor[0] + (xdom[1] - anchor[0]) * zoom]"
+        },
+        {
+          "events": "dblclick",
+          "update": "null"
+        }
+      ]
+    },
+    {
+      "name": "ydom",
+      "update": "null",
+      "on": [
+        {
+          "events": {"signal": "delta"},
+          "update": "[ycur[0] + span(ycur) * delta[1] / height, ycur[1] + span(ycur) * delta[1] / height]"
+        },
+        {
+          "events": {"signal": "zoom"},
+          "update": "[anchor[1] + (ydom[0] - anchor[1]) * zoom, anchor[1] + (ydom[1] - anchor[1]) * zoom]"
+        },
+        {
+          "events": "dblclick",
+          "update": "null"
+        }
+      ]
+    }
+  ],
+  
+  "data": [
+    {
+      "name": "dataset",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "datum['Mittlere Wirkleistung'] != null && datum['Mittlere Windgeschwindigkeit'] != null"
+        },
+        {
+          "type": "formula",
+          "expr": "toDate(datum.date)",
+          "as": "date_parsed"
+        },
+        {
+          "type": "formula",
+          "expr": "+datum['Mittlere Wirkleistung']",
+          "as": "power"
+        },
+        {
+          "type": "formula",
+          "expr": "+datum['Mittlere Windgeschwindigkeit']",
+          "as": "wind_speed"
+        },
+        {
+          "type": "collect",
+          "sort": {"field": "date_parsed"}
+        }
+      ]
+    }
+  ],
+  
+  "scales": [
+    {
+      "name": "xscale",
+      "type": "time",
+      "domain": {"signal": "xdom || extent(data('dataset'), 'date_parsed')"},
+      "range": {"signal": "xrange"},
+      "nice": true
+    },
+    {
+      "name": "yscale",
+      "type": "linear",
+      "domain": {"signal": "ydom || [0, max(2000, peek(data('dataset'), 'power'))]"},
+      "range": {"signal": "yrange"},
+      "nice": true,
+      "zero": true
+    },
+    {
+      "name": "yscale2",
+      "type": "linear",
+      "domain": [0, 20],
+      "range": {"signal": "yrange"},
+      "nice": true,
+      "zero": true
+    }
+  ],
+  
+  "axes": [
+    {
+      "scale": "xscale",
+      "orient": "bottom",
+      "grid": true,
+      "gridColor": "#e0e0e0",
+      "labelColor": "#666",
+      "titleColor": "#333",
+      "format": "%d %b",
+      "labelAngle": 0,
+      "labelBaseline": "top",
+      "labelPadding": 5
+    },
+    {
+      "scale": "yscale",
+      "orient": "left",
+      "grid": true,
+      "gridColor": "#e0e0e0",
+      "labelColor": "#666",
+      "titleColor": "#333",
+      "title": "Mittlere Wirkleistung (kW)",
+      "titlePadding": 20,
+      "titleFontSize": 12,
+      "labelFontSize": 10
+    },
+    {
+      "scale": "yscale2",
+      "orient": "right",
+      "labelColor": "#1e4d8b",
+      "titleColor": "#1e4d8b",
+      "title": "Mittlere Windgeschwindigkeit (m/s)",
+      "titlePadding": 20,
+      "titleFontSize": 12,
+      "labelFontSize": 10,
+      "domain": false,
+      "ticks": false
+    }
+  ],
+  
+  "marks": [
+    {
+      "type": "area",
+      "from": {"data": "dataset"},
+      "encode": {
+        "enter": {
+          "x": {"scale": "xscale", "field": "date_parsed"},
+          "y": {"scale": "yscale", "field": "power"},
+          "y2": {"scale": "yscale", "value": 0},
+          "fill": {"value": "#87CEEB"},
+          "fillOpacity": {"value": 0.6}
+        },
+        "update": {
+          "x": {"scale": "xscale", "field": "date_parsed"},
+          "y": {"scale": "yscale", "field": "power"},
+          "y2": {"scale": "yscale", "value": 0}
+        }
+      }
+    },
+    {
+      "type": "line",
+      "from": {"data": "dataset"},
+      "encode": {
+        "enter": {
+          "x": {"scale": "xscale", "field": "date_parsed"},
+          "y": {"scale": "yscale2", "field": "wind_speed"},
+          "stroke": {"value": "#1e4d8b"},
+          "strokeWidth": {"value": 2}
+        },
+        "update": {
+          "x": {"scale": "xscale", "field": "date_parsed"},
+          "y": {"scale": "yscale2", "field": "wind_speed"}
+        }
+      }
+    },
+    {
+      "type": "text",
+      "encode": {
+        "enter": {
+          "x": {"value": 10},
+          "y": {"value": 10},
+          "text": {"value": "● Mittlere Windgeschwindigkeit (m/s) — Mittlere Wirkleistung (kW)"},
+          "fontSize": {"value": 14},
+          "fontWeight": {"value": "bold"},
+          "fill": {"value": "#333"}
+        }
+      }
+    },
+    {
+      "type": "rect",
+      "encode": {
+        "enter": {
+          "x": {"value": 10},
+          "y": {"value": 8},
+          "width": {"value": 8},
+          "height": {"value": 8},
+          "fill": {"value": "#1e4d8b"}
+        }
+      }
+    }
+  ]
+}
