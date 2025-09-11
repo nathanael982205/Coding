@@ -1,0 +1,213 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "description": "Wind Turbine Monitoring mit WLOG Events - Erweiterte Version",
+  "width": 900,
+  "height": 500,
+  "padding": 50,
+  "autosize": "pad",
+  
+  "signals": [
+    {
+      "name": "showAllWLOG",
+      "value": false,
+      "bind": {"input": "checkbox", "name": "Alle WLOG anzeigen "}
+    },
+    {
+      "name": "selectedRelevance",
+      "value": ["Sehr hoch", "Hoch"],
+      "bind": {
+        "input": "select",
+        "options": [
+          ["Sehr hoch"],
+          ["Sehr hoch", "Hoch"],
+          ["Sehr hoch", "Hoch", "Mittel"]
+        ],
+        "labels": ["Nur sehr hoch", "Hoch + Sehr hoch", "Alle Relevanz-Stufen"],
+        "name": "WLOG Relevanz Filter: "
+      }
+    }
+  ],
+
+  "data": [
+    {
+      "name": "main_data",
+      "values": []
+    },
+    {
+      "name": "wlog_events",
+      "values": []
+    },
+    {
+      "name": "filtered_wlog",
+      "source": "wlog_events",
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "showAllWLOG || indexof(selectedRelevance, datum.Relevanz) >= 0"
+        },
+        {
+          "type": "formula",
+          "expr": "datum.Relevanz == 'Sehr hoch' ? '#DC143C' : datum.Relevanz == 'Hoch' ? '#FF4500' : '#FFA500'",
+          "as": "wlog_color"
+        },
+        {
+          "type": "formula",
+          "expr": "datum.Relevanz == 'Sehr hoch' ? 150 : datum.Relevanz == 'Hoch' ? 120 : 80",
+          "as": "wlog_size"
+        }
+      ]
+    },
+    {
+      "name": "combined_data",
+      "source": "main_data",
+      "transform": [
+        {
+          "type": "lookup",
+          "from": "filtered_wlog",
+          "key": "event_time",
+          "fields": ["event_time"],
+          "values": ["WLOG_Code", "WLOG_Mess_Rem", "Kategorie", "Relevanz", "wlog_color", "wlog_size"],
+          "as": ["wlog_code", "wlog_message", "wlog_category", "wlog_relevance", "wlog_color", "wlog_size"]
+        }
+      ]
+    }
+  ],
+
+  "scales": [
+    {
+      "name": "xscale",
+      "type": "time",
+      "domain": {"data": "main_data", "field": "event_time"},
+      "range": "width"
+    },
+    {
+      "name": "yscale_wind",
+      "type": "linear",
+      "domain": {"data": "main_data", "field": "wind_speed"},
+      "range": "height",
+      "nice": true,
+      "zero": true
+    },
+    {
+      "name": "yscale_power",
+      "type": "linear",
+      "domain": {"data": "main_data", "field": "power_output"},
+      "range": "height",
+      "nice": true,
+      "zero": true
+    }
+  ],
+
+  "axes": [
+    {
+      "orient": "bottom",
+      "scale": "xscale",
+      "title": "Zeit",
+      "titleFontSize": 12,
+      "titleColor": "#333"
+    },
+    {
+      "orient": "left",
+      "scale": "yscale_wind",
+      "title": "Windgeschwindigkeit (m/s)",
+      "titleFontSize": 12,
+      "titleColor": "#4A90E2",
+      "tickColor": "#4A90E2",
+      "labelColor": "#4A90E2"
+    },
+    {
+      "orient": "right",
+      "scale": "yscale_power",
+      "title": "Leistung (kW)",
+      "titleFontSize": 12,
+      "titleColor": "#2E8B57",
+      "tickColor": "#2E8B57",
+      "labelColor": "#2E8B57"
+    }
+  ],
+
+  "marks": [
+    {
+      "name": "wind_bars",
+      "type": "rect",
+      "from": {"data": "main_data"},
+      "encode": {
+        "enter": {
+          "x": {"scale": "xscale", "field": "event_time"},
+          "width": {"value": 4},
+          "y": {"scale": "yscale_wind", "field": "wind_speed"},
+          "y2": {"scale": "yscale_wind", "value": 0},
+          "fill": {"value": "#4A90E2"},
+          "fillOpacity": {"value": 0.7}
+        },
+        "update": {
+          "fillOpacity": {"value": 0.7}
+        },
+        "hover": {
+          "fillOpacity": {"value": 1.0}
+        }
+      }
+    },
+    {
+      "name": "power_line",
+      "type": "line",
+      "from": {"data": "main_data"},
+      "encode": {
+        "enter": {
+          "x": {"scale": "xscale", "field": "event_time"},
+          "y": {"scale": "yscale_power", "field": "power_output"},
+          "stroke": {"value": "#2E8B57"},
+          "strokeWidth": {"value": 2}
+        }
+      }
+    },
+    {
+      "name": "wlog_points",
+      "type": "symbol",
+      "from": {"data": "combined_data"},
+      "encode": {
+        "enter": {
+          "x": {"scale": "xscale", "field": "event_time"},
+          "y": {"scale": "yscale_power", "field": "power_output"},
+          "size": {"field": "wlog_size"},
+          "fill": {"field": "wlog_color"},
+          "stroke": {"value": "#8B0000"},
+          "strokeWidth": {"value": 2},
+          "opacity": {"value": 0.9},
+          "tooltip": {
+            "signal": "{'Zeit': timeFormat(datum.event_time, '%d.%m.%Y %H:%M'), 'WLOG Code': datum.wlog_code, 'Meldung': datum.wlog_message, 'Kategorie': datum.wlog_category, 'Relevanz': datum.wlog_relevance, 'Leistung': format(datum.power_output, '.0f') + ' kW', 'Windgeschwindigkeit': format(datum.wind_speed, '.1f') + ' m/s'}"
+          }
+        },
+        "update": {
+          "opacity": {"value": 0.9}
+        },
+        "hover": {
+          "opacity": {"value": 1.0},
+          "size": {"signal": "datum.wlog_size * 1.5"}
+        }
+      },
+      "transform": [
+        {
+          "type": "filter",
+          "expr": "datum.wlog_code != null"
+        }
+      ]
+    }
+  ],
+
+  "legends": [
+    {
+      "fill": "wlog_color",
+      "title": "WLOG Relevanz",
+      "orient": "top-right",
+      "encode": {
+        "symbols": {
+          "enter": {
+            "shape": {"value": "circle"},
+            "size": {"value": 100}
+          }
+        }
+      }
+    }
+  ]
+}

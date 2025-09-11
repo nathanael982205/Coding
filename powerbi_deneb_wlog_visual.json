@@ -1,0 +1,162 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "description": "Wind Turbine mit WLOG Events für Power BI Deneb",
+  "width": {"step": 20},
+  "height": 400,
+  "data": {"name": "dataset"},
+  
+  "transform": [
+    {
+      "calculate": "datum['Hat_Kritisches_WLOG'] == 1",
+      "as": "has_wlog"
+    },
+    {
+      "calculate": "datum['WLOG_Color'] ? datum['WLOG_Color'] : '#DC143C'",
+      "as": "wlog_point_color"
+    }
+  ],
+  
+  "layer": [
+    {
+      "description": "Windgeschwindigkeit als Balken",
+      "mark": {
+        "type": "bar",
+        "opacity": 0.6,
+        "color": "#4A90E2",
+        "width": {"band": 0.8}
+      },
+      "encoding": {
+        "x": {
+          "field": "event_time",
+          "type": "temporal",
+          "title": "Zeit",
+          "axis": {
+            "format": "%H:%M",
+            "labelAngle": -45
+          }
+        },
+        "y": {
+          "field": "wind_speed", 
+          "type": "quantitative",
+          "title": "Windgeschwindigkeit (m/s)",
+          "scale": {"domain": [0, 25]}
+        },
+        "tooltip": [
+          {"field": "event_time", "type": "temporal", "title": "Zeit", "format": "%d.%m.%Y %H:%M"},
+          {"field": "wind_speed", "type": "quantitative", "title": "Windgeschwindigkeit (m/s)", "format": ".1f"},
+          {"field": "power_output", "type": "quantitative", "title": "Leistung (kW)", "format": ".0f"}
+        ]
+      }
+    },
+    
+    {
+      "description": "Leistungskurve",
+      "mark": {
+        "type": "line",
+        "point": false,
+        "color": "#2E8B57",
+        "strokeWidth": 3,
+        "opacity": 0.8
+      },
+      "encoding": {
+        "x": {
+          "field": "event_time",
+          "type": "temporal"
+        },
+        "y": {
+          "field": "power_output",
+          "type": "quantitative",
+          "scale": {"domain": [0, 2000]}
+        }
+      }
+    },
+    
+    {
+      "description": "WLOG Events als rote Punkte",
+      "transform": [
+        {"filter": "datum.has_wlog == true"}
+      ],
+      "mark": {
+        "type": "circle",
+        "size": 200,
+        "stroke": "#8B0000",
+        "strokeWidth": 3,
+        "opacity": 0.95
+      },
+      "encoding": {
+        "x": {
+          "field": "event_time",
+          "type": "temporal"
+        },
+        "y": {
+          "field": "power_output",
+          "type": "quantitative"
+        },
+        "color": {
+          "field": "wlog_point_color",
+          "type": "nominal",
+          "scale": null,
+          "legend": {
+            "title": "WLOG Relevanz",
+            "symbolType": "circle",
+            "symbolSize": 200
+          }
+        },
+        "tooltip": [
+          {"field": "event_time", "type": "temporal", "title": "⚠️ WLOG Event Zeit", "format": "%d.%m.%Y %H:%M"},
+          {"field": "WLOG_Details", "type": "nominal", "title": "WLOG Details"},
+          {"field": "power_output", "type": "quantitative", "title": "Leistung zu diesem Zeitpunkt", "format": ".0f"},
+          {"field": "wind_speed", "type": "quantitative", "title": "Windgeschwindigkeit", "format": ".1f"}
+        ]
+      }
+    },
+    
+    {
+      "description": "WLOG Warnsymbole",
+      "transform": [
+        {"filter": "datum.has_wlog == true"}
+      ],
+      "mark": {
+        "type": "text",
+        "fontSize": 16,
+        "fontWeight": "bold",
+        "dy": -15,
+        "color": "white"
+      },
+      "encoding": {
+        "x": {
+          "field": "event_time",
+          "type": "temporal"
+        },
+        "y": {
+          "field": "power_output",
+          "type": "quantitative"
+        },
+        "text": {"value": "⚠"}
+      }
+    }
+  ],
+  
+  "resolve": {
+    "scale": {
+      "y": "independent"
+    }
+  },
+  
+  "config": {
+    "axis": {
+      "labelFontSize": 11,
+      "titleFontSize": 12,
+      "grid": true,
+      "gridOpacity": 0.3
+    },
+    "legend": {
+      "labelFontSize": 11,
+      "titleFontSize": 12,
+      "symbolSize": 100
+    },
+    "view": {
+      "stroke": "transparent"
+    }
+  }
+}
