@@ -1,0 +1,998 @@
+{
+    "$schema": "https://vega.github.io/schema/vega/v5.json",
+    "autosize": {
+        "type": "fit",
+        "contains": "padding",
+        "resize": true
+    },
+    "description": "Wind Power with Logbook and DIM WLOG Codes Vesta",
+    "background": null,
+    "padding": {
+        "left": 0,
+        "right": 0,
+        "top": 30,
+        "bottom": 0
+    },
+    "signals": [
+        {
+            "name": "detailDomain"
+        },
+        {
+            "name": "brush",
+            "value": [0, 0],
+            "on": [
+                {
+                    "events": "@overview:pointerdown",
+                    "update": "[x(), x()]"
+                },
+                {
+                    "events": "[@overview:pointerdown, window:pointerup] > window:pointermove!",
+                    "update": "[brush[0], clamp(x(), 0, width)]"
+                },
+                {
+                    "events": {
+                        "signal": "delta"
+                    },
+                    "update": "clampRange([anchor[0] + delta, anchor[1] + delta], 0, width)"
+                }
+            ]
+        },
+        {
+            "name": "isDay",
+            "update": "(domain('xscaleTime')[1]-domain('xscaleTime')[0]) <= 86400000"
+        },
+        {
+            "name": "midTick",
+            "update": "(domain('xscaleTime')[0] + domain('xscaleTime')[1]) / 2"
+        },
+        {
+            "name": "anchor",
+            "value": null,
+            "on": [
+                {
+                    "events": "@brush:pointerdown",
+                    "update": "slice(brush)"
+                }
+            ]
+        },
+        {
+            "name": "xdown",
+            "value": 0,
+            "on": [
+                {
+                    "events": "@brush:pointerdown",
+                    "update": "x()"
+                }
+            ]
+        },
+        {
+            "name": "delta",
+            "value": 0,
+            "on": [
+                {
+                    "events": "[@brush:pointerdown, window:pointerup] > window:pointermove!",
+                    "update": "x() - xdown"
+                }
+            ]
+        },
+        {
+            "name": "showWLOGEvents",
+            "value": true,
+            "bind": {
+                "input": "checkbox",
+                "name": "WLOG Events anzeigen "
+            }
+        },
+        {
+            "name": "wlogRelevanceFilter",
+            "value": ["Sehr hoch", "Hoch"],
+            "bind": {
+                "input": "select",
+                "options": [
+                    ["Sehr hoch"],
+                    ["Sehr hoch", "Hoch"],
+                    ["Sehr hoch", "Hoch", "Mittel"]
+                ],
+                "labels": ["Nur sehr hoch", "Hoch + Sehr hoch", "Alle Relevanz-Stufen"],
+                "name": "WLOG Relevanz Filter: "
+            }
+        }
+    ],
+    "data": [
+        {
+            "name": "dataset",
+            "transform": [
+                {
+                    "type": "formula",
+                    "expr": "datetime(datum.date)",
+                    "as": "date_parsed"
+                },
+                {
+                    "type": "formula",
+                    "expr": "+datum['Mittlere Wirkleistung']",
+                    "as": "power"
+                },
+                {
+                    "type": "formula",
+                    "expr": "+datum['Mittlere Windgeschwindigkeit']",
+                    "as": "wind_speed"
+                },
+                {
+                    "type": "filter",
+                    "expr": "datum.power != null && datum.wind_speed != null && datum.date_parsed != null"
+                },
+                {
+                    "type": "collect",
+                    "sort": {
+                        "field": "date_parsed"
+                    }
+                },
+                {
+                    "type": "formula",
+                    "expr": "floor(toNumber(datum.date_parsed)/60000)",
+                    "as": "k_scada"
+                }
+            ]
+        },
+        {
+            "name": "keys",
+            "source": "dataset",
+            "transform": [
+                {
+                    "type": "filter",
+                    "expr": "!isValid(detailDomain) || (datum.date_parsed >= detailDomain[0] && datum.date_parsed <= detailDomain[1])"
+                },
+                {
+                    "type": "aggregate",
+                    "groupby": ["k_scada"]
+                }
+            ]
+        },
+        {
+            "name": "logbook_events",
+            "source": "dataset",
+            "transform": [
+                {
+                    "type": "filter",
+                    "expr": "isValid(datum.event_time) && isValid(datum.WLOG_Code)"
+                },
+                {
+                    "type": "formula",
+                    "expr": "datetime(datum.event_time)",
+                    "as": "t_event"
+                },
+                {
+                    "type": "formula",
+                    "expr": "floor(toNumber(datum.t_event)/60000)",
+                    "as": "k_event"
+                },
+                {
+                    "type": "lookup",
+                    "from": "keys",
+                    "key": "k_scada",
+                    "fields": ["k_event"],
+                    "as": ["hit"]
+                },
+                {
+                    "type": "filter",
+                    "expr": "isValid(datum.hit)"
+                },
+                {
+                    "type": "filter",
+                    "expr": "!isValid(detailDomain) || (datum.t_event >= detailDomain[0] && datum.t_event <= detailDomain[1])"
+                }
+            ]
+        },
+        {
+            "name": "dim_wlog_filtered",
+            "source": "dataset",
+            "transform": [
+                {
+                    "type": "filter",
+                    "expr": "isValid(datum.WLOG_Code) && isValid(datum.Relevanz) && isValid(datum.Beschreibung)"
+                },
+                {
+                    "type": "aggregate",
+                    "groupby": ["WLOG_Code", "Relevanz", "Beschreibung", "Kategorie"]
+                }
+            ]
+        },
+        {
+            "name": "events_with_relevance",
+            "source": "logbook_events",
+            "transform": [
+                {
+                    "type": "lookup",
+                    "from": "dim_wlog_filtered",
+                    "key": "WLOG_Code",
+                    "fields": ["WLOG_Code"],
+                    "values": ["Relevanz", "Beschreibung", "Kategorie"],
+                    "as": ["wlog_relevanz", "wlog_beschreibung", "wlog_kategorie"]
+                },
+                {
+                    "type": "filter",
+                    "expr": "isValid(datum.wlog_relevanz) && indexof(wlogRelevanceFilter, datum.wlog_relevanz) >= 0"
+                },
+                {
+                    "type": "formula",
+                    "expr": "datum.wlog_relevanz == 'Sehr hoch' ? '#DC143C' : datum.wlog_relevanz == 'Hoch' ? '#FF4500' : '#FFA500'",
+                    "as": "wlog_color"
+                },
+                {
+                    "type": "formula",
+                    "expr": "datum.wlog_relevanz == 'Sehr hoch' ? 200 : datum.wlog_relevanz == 'Hoch' ? 150 : 100",
+                    "as": "wlog_size"
+                }
+            ]
+        },
+        {
+            "name": "events_with_power",
+            "source": "events_with_relevance",
+            "transform": [
+                {
+                    "type": "lookup",
+                    "from": "dataset",
+                    "key": "k_scada",
+                    "fields": ["k_event"],
+                    "values": ["power", "wind_speed"],
+                    "as": ["current_power", "current_wind_speed"]
+                }
+            ]
+        }
+    ],
+    "marks": [
+        {
+            "type": "group",
+            "name": "detail",
+            "encode": {
+                "enter": {
+                    "width": {
+                        "signal": "width"
+                    },
+                    "height": {
+                        "signal": "height * 0.7"
+                    },
+                    "x": {
+                        "value": 0
+                    },
+                    "y": {
+                        "value": 0
+                    }
+                }
+            },
+            "scales": [
+                {
+                    "name": "xscale",
+                    "type": "band",
+                    "range": "width",
+                    "domain": {
+                        "data": "dataset",
+                        "field": "date_parsed"
+                    },
+                    "domainRaw": {
+                        "signal": "detailDomain"
+                    },
+                    "padding": 0.1
+                },
+                {
+                    "name": "xscaleTime",
+                    "type": "time",
+                    "range": "width",
+                    "domain": {
+                        "fields": [
+                            {
+                                "data": "dataset",
+                                "field": "date_parsed"
+                            },
+                            {
+                                "data": "logbook_events",
+                                "field": "t_event"
+                            }
+                        ]
+                    },
+                    "domainRaw": {
+                        "signal": "detailDomain"
+                    }
+                },
+                {
+                    "name": "yscale",
+                    "type": "linear",
+                    "domain": {
+                        "data": "dataset",
+                        "field": "wind_speed"
+                    },
+                    "range": {
+                        "signal": "[height * 0.7, 0]"
+                    },
+                    "nice": true,
+                    "zero": true
+                },
+                {
+                    "name": "yscale2",
+                    "type": "linear",
+                    "domain": {
+                        "data": "dataset",
+                        "field": "power"
+                    },
+                    "domainMin": 0,
+                    "range": {
+                        "signal": "[height * 0.7, 0]"
+                    },
+                    "nice": true,
+                    "zero": true
+                }
+            ],
+            "axes": [
+                {
+                    "scale": "xscaleTime",
+                    "orient": "bottom",
+                    "grid": false,
+                    "labelColor": "#000000",
+                    "labelFontSize": 16,
+                    "labelFont": "Segoe UI",
+                    "labelAngle": 0,
+                    "labelPadding": 5,
+                    "values": {
+                        "signal": "(domain('xscaleTime')[1]-domain('xscaleTime')[0]) < 0.95*86400000 ? timeSequence(datetime(year(domain('xscaleTime')[0]), month(domain('xscaleTime')[0]), date(domain('xscaleTime')[0]), hours(domain('xscaleTime')[0]), 0, 0), datetime(year(domain('xscaleTime')[1]), month(domain('xscaleTime')[1]), date(domain('xscaleTime')[1]), hours(domain('xscaleTime')[1]) + 1, 0, 0), {unit:'hour', step:1}) : timeSequence(datetime(year(domain('xscaleTime')[0]), month(domain('xscaleTime')[0]), date(domain('xscaleTime')[0]), 0, 0, 0), datetime(year(domain('xscaleTime')[1]), month(domain('xscaleTime')[1]), date(domain('xscaleTime')[1]) + 1, 0, 0, 0), {unit:'day', step:1})"
+                    },
+                    "encode": {
+                        "labels": {
+                            "update": {
+                                "text": {
+                                    "signal": "(domain('xscaleTime')[1]-domain('xscaleTime')[0]) < 0.95*86400000 ? timeFormat(datum.value,'%H:%M') : (hours(datum.value)==0 ? timeFormat(datum.value,'%d.%m.') : timeFormat(datum.value,'%H:%M'))"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "scale": "xscaleTime",
+                    "orient": "bottom",
+                    "grid": true,
+                    "labels": false,
+                    "ticks": false,
+                    "domain": false,
+                    "zindex": 0,
+                    "gridColor": "#e0e0e0",
+                    "gridDash": [2, 2],
+                    "gridOpacity": 1,
+                    "values": {
+                        "signal": "(domain('xscaleTime')[1]-domain('xscaleTime')[0]) < 0.95*86400000 ? timeSequence(datetime(year(domain('xscaleTime')[0]), month(domain('xscaleTime')[0]), date(domain('xscaleTime')[0]), hours(domain('xscaleTime')[0]), 0, 0), datetime(year(domain('xscaleTime')[1]), month(domain('xscaleTime')[1]), date(domain('xscaleTime')[1]), hours(domain('xscaleTime')[1]) + 1, 0, 0), {unit:'hour', step:1}) : timeSequence(datetime(year(domain('xscaleTime')[0]), month(domain('xscaleTime')[0]), date(domain('xscaleTime')[0]), 0, 0, 0), datetime(year(domain('xscaleTime')[1]), month(domain('xscaleTime')[1]), date(domain('xscaleTime')[1]) + 1, 0, 0, 0), {unit:'day', step:1})"
+                    }
+                },
+                {
+                    "scale": "yscale",
+                    "orient": "left",
+                    "grid": true,
+                    "gridColor": "#e0e0e0",
+                    "labelColor": "#000000",
+                    "labelFont": "Segoe UI",
+                    "labelFontSize": 20,
+                    "titleColor": "#000000",
+                    "title": "m/s",
+                    "titlePadding": 20,
+                    "titleFontSize": 20,
+                    "titleFont": "DIN",
+                    "titleFontWeight": "normal",
+                    "values": {
+                        "signal": "sequence(0, ceil(domain('yscale')[1]/5)*5 + 5, 5)"
+                    }
+                },
+                {
+                    "scale": "yscale2",
+                    "orient": "right",
+                    "labelColor": "#000000",
+                    "labelFont": "Segoe UI",
+                    "labelBound": false,
+                    "labelFlush": false,
+                    "labelFontSize": 20,
+                    "titleColor": "#000000",
+                    "title": "kW",
+                    "titlePadding": 20,
+                    "titleFontSize": 20,
+                    "titleFont": "DIN",
+                    "grid": false,
+                    "titleFontWeight": "normal",
+                    "values": {
+                        "signal": "sequence(0, ceil(domain('yscale2')[1]/500)*500 + 500, 500)"
+                    }
+                }
+            ],
+            "marks": [
+                {
+                    "type": "group",
+                    "encode": {
+                        "enter": {
+                            "width": {
+                                "field": {
+                                    "group": "width"
+                                }
+                            },
+                            "height": {
+                                "field": {
+                                    "group": "height"
+                                }
+                            },
+                            "clip": {
+                                "value": true
+                            }
+                        }
+                    },
+                    "marks": [
+                        {
+                            "type": "rect",
+                            "name": "bars",
+                            "from": {
+                                "data": "dataset"
+                            },
+                            "encode": {
+                                "enter": {
+                                    "fill": {
+                                        "value": "#118DFF"
+                                    },
+                                    "fillOpacity": {
+                                        "value": 0.5
+                                    }
+                                },
+                                "update": {
+                                    "xc": {
+                                        "scale": "xscaleTime",
+                                        "field": "date_parsed"
+                                    },
+                                    "width": {
+                                        "value": 5
+                                    },
+                                    "y": {
+                                        "scale": "yscale",
+                                        "field": "wind_speed"
+                                    },
+                                    "y2": {
+                                        "scale": "yscale",
+                                        "value": 0
+                                    },
+                                    "tooltip": {
+                                        "signal": "{'Datum': timeFormat(datum.date_parsed, '%d.%m.%Y %H:%M'), 'Windgeschwindigkeit': format(datum.wind_speed, '.1f') + ' m/s', 'Wirkleistung': format(datum.power, '.1f') + ' kW'}"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "type": "line",
+                            "name": "line",
+                            "from": {
+                                "data": "dataset"
+                            },
+                            "encode": {
+                                "enter": {
+                                    "stroke": {
+                                        "value": "#12239E"
+                                    },
+                                    "strokeWidth": {
+                                        "value": 3
+                                    }
+                                },
+                                "update": {
+                                    "x": {
+                                        "scale": "xscaleTime",
+                                        "field": "date_parsed"
+                                    },
+                                    "y": {
+                                        "scale": "yscale2",
+                                        "field": "power"
+                                    },
+                                    "defined": {
+                                        "signal": "isValid(datum.power) && datum.power > 0"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "type": "symbol",
+                            "name": "wlog_events",
+                            "from": {
+                                "data": "events_with_power"
+                            },
+                            "encode": {
+                                "enter": {
+                                    "shape": {
+                                        "value": "circle"
+                                    },
+                                    "stroke": {
+                                        "value": "black"
+                                    },
+                                    "strokeWidth": {
+                                        "value": 2
+                                    },
+                                    "opacity": {
+                                        "value": 0.9
+                                    }
+                                },
+                                "update": {
+                                    "x": {
+                                        "scale": "xscaleTime",
+                                        "field": "t_event"
+                                    },
+                                    "y": {
+                                        "scale": "yscale2",
+                                        "field": "current_power",
+                                        "offset": -10
+                                    },
+                                    "size": {
+                                        "field": "wlog_size"
+                                    },
+                                    "fill": {
+                                        "field": "wlog_color"
+                                    },
+                                    "opacity": {
+                                        "signal": "showWLOGEvents ? 0.9 : 0"
+                                    },
+                                    "tooltip": {
+                                        "signal": "{'⚠️ WLOG Event': timeFormat(datum.t_event, '%d.%m.%Y %H:%M'), 'WLOG Code': datum.WLOG_Code, 'Beschreibung': datum.wlog_beschreibung, 'Kategorie': datum.wlog_kategorie, 'Relevanz': datum.wlog_relevanz, 'Leistung zu diesem Zeitpunkt': format(datum.current_power, '.0f') + ' kW', 'Windgeschwindigkeit': format(datum.current_wind_speed, '.1f') + ' m/s'}"
+                                    }
+                                },
+                                "hover": {
+                                    "size": {
+                                        "signal": "datum.wlog_size * 1.5"
+                                    },
+                                    "opacity": {
+                                        "value": 1.0
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "type": "text",
+                            "name": "wlog_warning_symbols",
+                            "from": {
+                                "data": "events_with_power"
+                            },
+                            "encode": {
+                                "enter": {
+                                    "fontSize": {
+                                        "value": 14
+                                    },
+                                    "fontWeight": {
+                                        "value": "bold"
+                                    },
+                                    "fill": {
+                                        "value": "white"
+                                    },
+                                    "align": {
+                                        "value": "center"
+                                    },
+                                    "baseline": {
+                                        "value": "middle"
+                                    }
+                                },
+                                "update": {
+                                    "x": {
+                                        "scale": "xscaleTime",
+                                        "field": "t_event"
+                                    },
+                                    "y": {
+                                        "scale": "yscale2",
+                                        "field": "current_power",
+                                        "offset": -10
+                                    },
+                                    "text": {
+                                        "value": "⚠"
+                                    },
+                                    "opacity": {
+                                        "signal": "showWLOGEvents ? 1 : 0"
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "group",
+            "name": "overview",
+            "signals": [
+                {
+                    "name": "detailDomain",
+                    "push": "outer",
+                    "on": [
+                        {
+                            "events": {
+                                "signal": "brush"
+                            },
+                            "update": "brush[0] !== brush[1] ? invert('xOverview', brush) : null"
+                        }
+                    ]
+                }
+            ],
+            "encode": {
+                "enter": {
+                    "x": {
+                        "value": 0
+                    },
+                    "y": {
+                        "signal": "height * 0.75"
+                    },
+                    "width": {
+                        "signal": "width"
+                    },
+                    "height": {
+                        "signal": "height * 0.15"
+                    },
+                    "fill": {
+                        "value": "transparent"
+                    }
+                }
+            },
+            "scales": [
+                {
+                    "name": "xOverview",
+                    "type": "time",
+                    "range": "width",
+                    "domain": {
+                        "data": "dataset",
+                        "field": "date_parsed"
+                    }
+                },
+                {
+                    "name": "yOverview",
+                    "type": "linear",
+                    "range": {
+                        "signal": "[height * 0.15, 0]"
+                    },
+                    "domain": {
+                        "data": "dataset",
+                        "field": "power"
+                    },
+                    "nice": true,
+                    "zero": true
+                }
+            ],
+            "axes": [
+                {
+                    "orient": "bottom",
+                    "scale": "xOverview",
+                    "labelFont": "Segoe UI",
+                    "labelFontSize": 17,
+                    "values": {
+                        "signal": "(domain('xscaleTime')[1]-domain('xscaleTime')[0]) < 0.95*86400000 ? timeSequence(datetime(year(domain('xscaleTime')[0]), month(domain('xscaleTime')[0]), date(domain('xscaleTime')[0]), hours(domain('xscaleTime')[0]), 0, 0), datetime(year(domain('xscaleTime')[1]), month(domain('xscaleTime')[1]), date(domain('xscaleTime')[1]), hours(domain('xscaleTime')[1]) + 1, 0, 0), {unit:'hour', step:1}) : timeSequence(datetime(year(domain('xscaleTime')[0]), month(domain('xscaleTime')[0]), date(domain('xscaleTime')[0]), 0, 0, 0), datetime(year(domain('xscaleTime')[1]), month(domain('xscaleTime')[1]), date(domain('xscaleTime')[1]) + 1, 0, 0, 0), {unit:'day', step:1})"
+                    },
+                    "encode": {
+                        "labels": {
+                            "update": {
+                                "text": {
+                                    "signal": "(domain('xscaleTime')[1]-domain('xscaleTime')[0]) < 0.95*86400000 ? timeFormat(datum.value,'%H:%M') : (hours(datum.value)==0 ? timeFormat(datum.value,'%d.%m.') : timeFormat(datum.value,'%H:%M'))"
+                                }
+                            }
+                        }
+                    }
+                }
+            ],
+            "marks": [
+                {
+                    "type": "area",
+                    "interactive": false,
+                    "from": {
+                        "data": "dataset"
+                    },
+                    "encode": {
+                        "update": {
+                            "x": {
+                                "scale": "xOverview",
+                                "field": "date_parsed"
+                            },
+                            "y": {
+                                "scale": "yOverview",
+                                "field": "power"
+                            },
+                            "y2": {
+                                "scale": "yOverview",
+                                "value": 0
+                            },
+                            "fill": {
+                                "value": "#118DFF"
+                            },
+                            "fillOpacity": {
+                                "value": 0.3
+                            }
+                        }
+                    }
+                },
+                {
+                    "type": "symbol",
+                    "name": "overview_wlog_events",
+                    "from": {
+                        "data": "events_with_relevance"
+                    },
+                    "encode": {
+                        "enter": {
+                            "shape": {
+                                "value": "circle"
+                            },
+                            "size": {
+                                "value": 50
+                            },
+                            "stroke": {
+                                "value": "black"
+                            },
+                            "strokeWidth": {
+                                "value": 1
+                            }
+                        },
+                        "update": {
+                            "x": {
+                                "scale": "xOverview",
+                                "field": "t_event"
+                            },
+                            "y": {
+                                "signal": "height * 0.15 - 15"
+                            },
+                            "fill": {
+                                "field": "wlog_color"
+                            },
+                            "opacity": {
+                                "signal": "showWLOGEvents ? 0.8 : 0"
+                            }
+                        }
+                    }
+                },
+                {
+                    "type": "rect",
+                    "name": "brush",
+                    "encode": {
+                        "enter": {
+                            "y": {
+                                "value": 0
+                            },
+                            "height": {
+                                "signal": "height * 0.15"
+                            },
+                            "fill": {
+                                "value": "#000000"
+                            },
+                            "fillOpacity": {
+                                "value": 0.2
+                            },
+                            "cursor": {
+                                "value": "move"
+                            }
+                        },
+                        "update": {
+                            "x": {
+                                "signal": "brush[0]"
+                            },
+                            "x2": {
+                                "signal": "brush[1]"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "type": "group",
+            "encode": {
+                "enter": {
+                    "x": {
+                        "signal": "width / 2"
+                    },
+                    "y": {
+                        "value": 10
+                    }
+                }
+            },
+            "marks": [
+                {
+                    "type": "group",
+                    "encode": {
+                        "enter": {
+                            "x": {
+                                "value": -350
+                            },
+                            "y": {
+                                "value": 0
+                            }
+                        }
+                    },
+                    "marks": [
+                        {
+                            "type": "rect",
+                            "encode": {
+                                "enter": {
+                                    "x": {
+                                        "value": -10
+                                    },
+                                    "y": {
+                                        "value": -5
+                                    },
+                                    "width": {
+                                        "value": 15
+                                    },
+                                    "height": {
+                                        "value": 10
+                                    },
+                                    "fill": {
+                                        "value": "#118DFF"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "type": "text",
+                            "encode": {
+                                "enter": {
+                                    "x": {
+                                        "value": 20
+                                    },
+                                    "y": {
+                                        "value": 0
+                                    },
+                                    "text": {
+                                        "value": "Mittlere Windgeschwindigkeit (m/s)"
+                                    },
+                                    "baseline": {
+                                        "value": "middle"
+                                    },
+                                    "fill": {
+                                        "value": "#000000"
+                                    },
+                                    "fontSize": {
+                                        "value": 20
+                                    },
+                                    "font": {
+                                        "value": "Segoe UI"
+                                    },
+                                    "fontWeight": {
+                                        "value": "bold"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "type": "path",
+                            "encode": {
+                                "enter": {
+                                    "x": {
+                                        "value": 380
+                                    },
+                                    "y": {
+                                        "value": 0
+                                    },
+                                    "path": {
+                                        "value": "M0,0 L15,0"
+                                    },
+                                    "stroke": {
+                                        "value": "#12239E"
+                                    },
+                                    "strokeWidth": {
+                                        "value": 3
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "type": "text",
+                            "encode": {
+                                "enter": {
+                                    "x": {
+                                        "value": 410
+                                    },
+                                    "y": {
+                                        "value": 0
+                                    },
+                                    "text": {
+                                        "value": "Mittlere Wirkleistung (kW)"
+                                    },
+                                    "baseline": {
+                                        "value": "middle"
+                                    },
+                                    "fill": {
+                                        "value": "#000000"
+                                    },
+                                    "fontSize": {
+                                        "value": 22
+                                    },
+                                    "font": {
+                                        "value": "Segoe UI"
+                                    },
+                                    "fontWeight": {
+                                        "value": "bold"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "type": "symbol",
+                            "encode": {
+                                "enter": {
+                                    "x": {
+                                        "value": 650
+                                    },
+                                    "y": {
+                                        "value": 0
+                                    },
+                                    "shape": {
+                                        "value": "circle"
+                                    },
+                                    "size": {
+                                        "value": 150
+                                    },
+                                    "fill": {
+                                        "value": "#DC143C"
+                                    },
+                                    "stroke": {
+                                        "value": "black"
+                                    },
+                                    "strokeWidth": {
+                                        "value": 2
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "type": "text",
+                            "encode": {
+                                "enter": {
+                                    "x": {
+                                        "value": 650
+                                    },
+                                    "y": {
+                                        "value": 0
+                                    },
+                                    "text": {
+                                        "value": "⚠"
+                                    },
+                                    "baseline": {
+                                        "value": "middle"
+                                    },
+                                    "align": {
+                                        "value": "center"
+                                    },
+                                    "fill": {
+                                        "value": "white"
+                                    },
+                                    "fontSize": {
+                                        "value": 12
+                                    },
+                                    "fontWeight": {
+                                        "value": "bold"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "type": "text",
+                            "encode": {
+                                "enter": {
+                                    "x": {
+                                        "value": 680
+                                    },
+                                    "y": {
+                                        "value": 0
+                                    },
+                                    "text": {
+                                        "value": "WLOG Events (aus Logbook + DIM Filter)"
+                                    },
+                                    "baseline": {
+                                        "value": "middle"
+                                    },
+                                    "fill": {
+                                        "value": "#000000"
+                                    },
+                                    "fontSize": {
+                                        "value": 18
+                                    },
+                                    "font": {
+                                        "value": "Segoe UI"
+                                    },
+                                    "fontWeight": {
+                                        "value": "bold"
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

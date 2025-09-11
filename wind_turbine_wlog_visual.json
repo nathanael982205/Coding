@@ -1,0 +1,116 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "description": "Wind Turbine Monitoring mit WLOG Events",
+  "width": 800,
+  "height": 400,
+  "data": {
+    "name": "dataset"
+  },
+  "transform": [
+    {
+      "lookup": "event_time",
+      "from": {
+        "data": {
+          "name": "wlog_data"
+        },
+        "key": "event_time",
+        "fields": ["WLOG_Code", "WLOG_Mess_Rem", "Kategorie", "Relevanz"]
+      },
+      "as": ["wlog_code", "wlog_message", "wlog_category", "wlog_relevance"],
+      "default": null
+    },
+    {
+      "calculate": "datum.wlog_relevance == 'Sehr hoch' || datum.wlog_relevance == 'Hoch'",
+      "as": "is_critical_wlog"
+    }
+  ],
+  "layer": [
+    {
+      "description": "Windgeschwindigkeit Balken",
+      "mark": {
+        "type": "bar",
+        "opacity": 0.7,
+        "color": "#4A90E2"
+      },
+      "encoding": {
+        "x": {
+          "field": "event_time",
+          "type": "temporal",
+          "title": "Zeit"
+        },
+        "y": {
+          "field": "wind_speed",
+          "type": "quantitative",
+          "title": "Windgeschwindigkeit (m/s)",
+          "scale": {"domain": [0, 20]}
+        },
+        "tooltip": [
+          {"field": "event_time", "type": "temporal", "title": "Zeit"},
+          {"field": "wind_speed", "type": "quantitative", "title": "Windgeschwindigkeit", "format": ".1f"},
+          {"field": "power_output", "type": "quantitative", "title": "Leistung", "format": ".0f"}
+        ]
+      }
+    },
+    {
+      "description": "Leistung Linie",
+      "mark": {
+        "type": "line",
+        "point": false,
+        "color": "#2E8B57",
+        "strokeWidth": 2
+      },
+      "encoding": {
+        "x": {
+          "field": "event_time",
+          "type": "temporal"
+        },
+        "y": {
+          "field": "power_output",
+          "type": "quantitative",
+          "title": "Leistung (kW)",
+          "scale": {"domain": [0, 2000]}
+        }
+      }
+    },
+    {
+      "description": "Kritische WLOG Events als rote Punkte",
+      "transform": [
+        {
+          "filter": "datum.is_critical_wlog == true"
+        }
+      ],
+      "mark": {
+        "type": "circle",
+        "size": 100,
+        "color": "#DC143C",
+        "stroke": "#8B0000",
+        "strokeWidth": 2,
+        "opacity": 0.9
+      },
+      "encoding": {
+        "x": {
+          "field": "event_time",
+          "type": "temporal"
+        },
+        "y": {
+          "field": "power_output",
+          "type": "quantitative"
+        },
+        "tooltip": [
+          {"field": "event_time", "type": "temporal", "title": "Zeit"},
+          {"field": "wlog_code", "type": "nominal", "title": "WLOG Code"},
+          {"field": "wlog_message", "type": "nominal", "title": "Meldung"},
+          {"field": "wlog_category", "type": "nominal", "title": "Kategorie"},
+          {"field": "wlog_relevance", "type": "nominal", "title": "Relevanz"},
+          {"field": "power_output", "type": "quantitative", "title": "Leistung", "format": ".0f"},
+          {"field": "wind_speed", "type": "quantitative", "title": "Windgeschwindigkeit", "format": ".1f"}
+        ]
+      }
+    }
+  ],
+  "resolve": {
+    "scale": {
+      "y": "independent"
+    }
+  }
+}
