@@ -1,0 +1,656 @@
+{
+    "$schema": "https://vega.github.io/schema/vega/v5.json",
+    "autosize": {
+        "type": "fit",
+        "contains": "padding",
+        "resize": true
+    },
+    "description": "Organigram IWB - Cleaned Version",
+    "background": null,
+    "padding": 50,
+    "signals": [
+        {
+            "name": "nodeWidth",
+            "value": 300
+        },
+        {
+            "name": "nodeHeight",
+            "value": 70
+        },
+        {
+            "name": "verticalNodeGap",
+            "value": 20
+        },
+        {
+            "name": "horizontalNodeGap",
+            "value": 50
+        },
+        {
+            "name": "wrapChars",
+            "value": 40
+        },
+        {
+            "name": "startingDepth",
+            "value": 99,
+            "on": [
+                {
+                    "events": {
+                        "type": "timer",
+                        "throttle": 0
+                    },
+                    "update": "-1"
+                }
+            ]
+        },
+        {
+            "name": "node",
+            "value": 0,
+            "on": [
+                {
+                    "events": {
+                        "type": "click",
+                        "markname": "node"
+                    },
+                    "update": "datum.id"
+                },
+                {
+                    "events": {
+                        "type": "timer",
+                        "throttle": 10
+                    },
+                    "update": "0"
+                }
+            ]
+        },
+        {
+            "name": "nodeHighlight",
+            "value": "[0]",
+            "on": [
+                {
+                    "events": {
+                        "type": "mouseover",
+                        "markname": "node"
+                    },
+                    "update": "pluck(treeAncestors('treeCalcs', datum.id), 'id')"
+                },
+                {
+                    "events": {
+                        "type": "mouseout"
+                    },
+                    "update": "[0]"
+                }
+            ]
+        },
+        {
+            "name": "isExpanded",
+            "value": 0,
+            "on": [
+                {
+                    "events": {
+                        "type": "click",
+                        "markname": "node"
+                    },
+                    "update": "datum.children > 0 && indata('treeClickStorePerm', 'id', datum.childrenIds[0])?true:false"
+                }
+            ]
+        },
+        {
+            "name": "xrange",
+            "update": "[0, width]"
+        },
+        {
+            "name": "yrange",
+            "update": "[0, height]"
+        },
+        {
+            "name": "down",
+            "value": null,
+            "on": [
+                {
+                    "events": "touchend",
+                    "update": "null"
+                },
+                {
+                    "events": "mousedown, touchstart",
+                    "update": "xy()"
+                }
+            ]
+        },
+        {
+            "name": "xcur",
+            "value": null,
+            "on": [
+                {
+                    "events": "mousedown, touchstart, touchend",
+                    "update": "slice(xdom)"
+                }
+            ]
+        },
+        {
+            "name": "ycur",
+            "value": null,
+            "on": [
+                {
+                    "events": "mousedown, touchstart, touchend",
+                    "update": "slice(ydom)"
+                }
+            ]
+        },
+        {
+            "name": "delta",
+            "value": [0, 0],
+            "on": [
+                {
+                    "events": [
+                        {
+                            "source": "window",
+                            "type": "mousemove",
+                            "consume": true,
+                            "between": [
+                                {"type": "mousedown"},
+                                {"source": "window", "type": "mouseup"}
+                            ]
+                        },
+                        {
+                            "type": "touchmove",
+                            "consume": true,
+                            "filter": "event.touches.length === 1"
+                        }
+                    ],
+                    "update": "down ? [down[0]-x(), down[1]-y()] : [0,0]"
+                }
+            ]
+        },
+        {
+            "name": "anchor",
+            "value": [0, 0],
+            "on": [
+                {
+                    "events": "wheel",
+                    "update": "[invert('xscale', x()), invert('yscale', y())]"
+                },
+                {
+                    "events": {
+                        "type": "touchstart",
+                        "filter": "event.touches.length===2"
+                    },
+                    "update": "[(xdom[0] + xdom[1]) / 2, (ydom[0] + ydom[1]) / 2]"
+                }
+            ]
+        },
+        {
+            "name": "xext",
+            "update": "[0,width]"
+        },
+        {
+            "name": "yext",
+            "update": "[0,height]"
+        },
+        {
+            "name": "zoom",
+            "value": 1,
+            "on": [
+                {
+                    "events": "wheel!",
+                    "force": true,
+                    "update": "pow(1.001, event.deltaY * pow(16, event.deltaMode))"
+                },
+                {
+                    "events": {"signal": "dist2"},
+                    "force": true,
+                    "update": "dist1 / dist2"
+                }
+            ]
+        },
+        {
+            "name": "dist1",
+            "value": 0,
+            "on": [
+                {
+                    "events": {
+                        "type": "touchstart",
+                        "filter": "event.touches.length===2"
+                    },
+                    "update": "pinchDistance(event)"
+                },
+                {
+                    "events": {"signal": "dist2"},
+                    "update": "dist2"
+                }
+            ]
+        },
+        {
+            "name": "dist2",
+            "value": 0,
+            "on": [
+                {
+                    "events": {
+                        "type": "touchmove",
+                        "consume": true,
+                        "filter": "event.touches.length===2"
+                    },
+                    "update": "pinchDistance(event)"
+                }
+            ]
+        },
+        {
+            "name": "xdom",
+            "update": "slice(xext)",
+            "on": [
+                {
+                    "events": {"signal": "delta"},
+                    "update": "[xcur[0] + span(xcur) * delta[0] / width, xcur[1] + span(xcur) * delta[0] / width]"
+                },
+                {
+                    "events": {"signal": "zoom"},
+                    "update": "[anchor[0] + (xdom[0] - anchor[0]) * zoom, anchor[0] + (xdom[1] - anchor[0]) * zoom]"
+                },
+                {
+                    "events": "dblclick",
+                    "update": "[0,width]"
+                }
+            ]
+        },
+        {
+            "name": "ydom",
+            "update": "slice(yext)",
+            "on": [
+                {
+                    "events": {"signal": "delta"},
+                    "update": "[ycur[0] + span(ycur) * delta[1] / height, ycur[1] + span(ycur) * delta[1] / height]"
+                },
+                {
+                    "events": {"signal": "zoom"},
+                    "update": "[anchor[1] + (ydom[0] - anchor[1]) * zoom, anchor[1] + (ydom[1] - anchor[1]) * zoom]"
+                },
+                {
+                    "events": "dblclick",
+                    "update": "[0,height]"
+                }
+            ]
+        },
+        {
+            "name": "scaledNodeWidth",
+            "update": "(nodeWidth/ span(xdom))*width"
+        },
+        {
+            "name": "scaledNodeHeight",
+            "update": "abs(nodeHeight/ span(ydom))*height"
+        },
+        {
+            "name": "scaledFont13",
+            "update": "(22/ span(xdom))*width"
+        },
+        {
+            "name": "scaledFont12",
+            "update": "(15/ span(xdom))*width"
+        },
+        {
+            "name": "scaledFont11",
+            "update": "(14/ span(xdom))*width"
+        }
+    ],
+    "data": [
+        {
+            "name": "dataset"
+        },
+        {
+            "name": "renameCols",
+            "source": "dataset",
+            "transform": [
+                {"type": "formula", "as": "h_level1", "expr": "trim(datum.horizontal_level_1 || '')"},
+                {"type": "formula", "as": "v_level1", "expr": "trim(datum.vertikal_level_1 || '')"},
+                {"type": "formula", "as": "h_level2", "expr": "trim(datum.horizontal_level_2 || '')"},
+                {"type": "formula", "as": "v_level2", "expr": "trim(datum.vertikal_level_2 || '')"},
+                {"type": "formula", "as": "h_level3", "expr": "trim(datum.horizontal_level_3 || '')"},
+                {"type": "formula", "as": "v_level3", "expr": "trim(datum.vertikal_level_3 || '')"},
+                {"type": "formula", "as": "h_level4", "expr": "trim(datum.horizontal_level_4 || '')"},
+                {"type": "formula", "as": "v_level4", "expr": "trim(datum.vertikal_level_4 || '')"},
+                {"type": "formula", "as": "h_level5", "expr": "trim(datum.horizontal_level_5 || '')"},
+                {"type": "formula", "as": "v_level5", "expr": "trim(datum.vertikal_level_5 || '')"},
+                {"type": "filter", "expr": "datum.h_level1 != '' && datum.h_level1 != null"}
+            ]
+        },
+        {
+            "name": "wideToTall",
+            "source": "renameCols",
+            "transform": [
+                // Level 1 - nur horizontal
+                {"type": "formula", "expr": "{key: datum.h_level1, parent: null, person: '', kpi: 0, LevelId: 1, isVertical: false}", "as": "l1h"},
+                
+                // Level 2 - horizontal
+                {"type": "formula", "expr": "datum.h_level2 != '' && datum.h_level2 != null ? {key: datum.h_level1 + '|' + datum.h_level2, parent: datum.h_level1, person: '', kpi: 0, LevelId: 2, isVertical: false} : null", "as": "l2h"},
+                
+                // Level 2 - vertikal (nur wenn anders als horizontal)
+                {"type": "formula", "expr": "datum.v_level2 != '' && datum.v_level2 != null && datum.v_level2 != datum.h_level2 ? {key: datum.h_level1 + '|' + datum.v_level2, parent: datum.h_level1, person: '', kpi: 0, LevelId: 2, isVertical: true} : null", "as": "l2v"},
+                
+                // Level 3 - horizontal (unter h_level2)
+                {"type": "formula", "expr": "datum.h_level3 != '' && datum.h_level3 != null && datum.h_level2 != '' ? {key: datum.h_level1 + '|' + datum.h_level2 + '|' + datum.h_level3, parent: datum.h_level1 + '|' + datum.h_level2, person: '', kpi: 0, LevelId: 3, isVertical: false} : null", "as": "l3h"},
+                
+                // Level 3 - vertikal (unter v_level2)
+                {"type": "formula", "expr": "datum.v_level3 != '' && datum.v_level3 != null && datum.v_level2 != '' && datum.v_level3 != datum.h_level3 ? {key: datum.h_level1 + '|' + datum.v_level2 + '|' + datum.v_level3, parent: datum.h_level1 + '|' + datum.v_level2, person: '', kpi: 0, LevelId: 3, isVertical: true} : null", "as": "l3v"},
+                
+                // Level 4 - vertikal (unter h_level3)
+                {"type": "formula", "expr": "datum.v_level4 != '' && datum.v_level4 != null && datum.h_level3 != '' ? {key: datum.h_level1 + '|' + datum.h_level2 + '|' + datum.h_level3 + '|' + datum.v_level4, parent: datum.h_level1 + '|' + datum.h_level2 + '|' + datum.h_level3, person: '', kpi: 0, LevelId: 4, isVertical: true} : null", "as": "l4v"},
+                
+                {"type": "fold", "fields": ["l1h", "l2h", "l2v", "l3h", "l3v", "l4v"]},
+                {"type": "filter", "expr": "datum.value != null"},
+                {"type": "project", "fields": ["key", "value"]},
+                {"type": "formula", "expr": "datum.value.key", "as": "id"},
+                {"type": "formula", "expr": "reverse(split(datum.value.key,'|'))[0]", "as": "title"},
+                {"type": "formula", "expr": "datum.value.parent", "as": "parent"},
+                {"type": "formula", "expr": "datum.value.LevelId", "as": "LevelId"},
+                {"type": "formula", "expr": "datum.value.isVertical", "as": "isVertical"},
+                {"type": "filter", "expr": "isValid(datum.title) && datum.title != '' && datum.title != 'null' && datum.title != 'undefined'"},
+                
+                // Duplikate entfernen
+                {"type": "aggregate", "groupby": ["id", "parent", "title", "LevelId", "isVertical"], "fields": ["id"], "ops": ["count"], "as": ["count"]},
+                
+                {"type": "formula", "expr": "''", "as": "person"},
+                {"type": "formula", "expr": "0", "as": "kpi"}
+            ]
+        },
+        {
+            "name": "treeCalcs",
+            "source": "wideToTall",
+            "transform": [
+                {
+                    "type": "stratify",
+                    "key": "id",
+                    "parentKey": "parent"
+                },
+                {
+                    "type": "tree",
+                    "method": {"signal": "'tidy'"},
+                    "separation": {"signal": "false"},
+                    "as": ["y", "x", "depth", "children"]
+                },
+                {
+                    "as": "parent",
+                    "type": "formula",
+                    "expr": "datum.parent"
+                }
+            ]
+        },
+        {
+            "name": "treeChildren",
+            "source": "treeCalcs",
+            "transform": [
+                {
+                    "type": "aggregate",
+                    "groupby": ["parent"],
+                    "fields": ["parent"],
+                    "ops": ["values"],
+                    "as": ["childrenObjects"]
+                },
+                {
+                    "type": "formula",
+                    "expr": "pluck(datum.childrenObjects,'id')",
+                    "as": "childrenIds"
+                }
+            ]
+        },
+        {
+            "name": "treeAncestors",
+            "source": "treeCalcs",
+            "transform": [
+                {
+                    "type": "formula",
+                    "as": "treeAncestors",
+                    "expr": "treeAncestors('treeCalcs', datum.id, 'root')"
+                },
+                {
+                    "type": "flatten",
+                    "fields": ["treeAncestors"]
+                },
+                {
+                    "type": "formula",
+                    "expr": "datum.treeAncestors.parent",
+                    "as": "allParents"
+                }
+            ]
+        },
+        {
+            "name": "treeClickStoreTemp",
+            "source": "treeAncestors",
+            "transform": [
+                {
+                    "type": "filter",
+                    "expr": "startingDepth!=-1 ? datum.depth <= (startingDepth + 2) : node != 0 && !isExpanded ? (datum.parent == node || datum.id == node) : node != 0 && isExpanded ? datum.allParents == node : false"
+                },
+                {
+                    "type": "project",
+                    "fields": ["id", "name", "parent", "x", "y", "depth", "children"]
+                },
+                {
+                    "type": "aggregate",
+                    "fields": ["id"],
+                    "ops": ["min"],
+                    "groupby": ["id", "name", "parent", "x", "y", "depth", "children"]
+                }
+            ]
+        },
+        {
+            "name": "treeClickStorePerm",
+            "values": [],
+            "on": [
+                {
+                    "trigger": "startingDepth>=0",
+                    "insert": "data('treeClickStoreTemp')"
+                },
+                {
+                    "trigger": "node",
+                    "insert": "!isExpanded? data('treeClickStoreTemp'):false"
+                },
+                {
+                    "trigger": "node",
+                    "remove": "isExpanded?data('treeClickStoreTemp'):false"
+                }
+            ]
+        },
+        {
+            "name": "treeLayout",
+            "source": "treeCalcs",
+            "transform": [
+                {
+                    "type": "filter",
+                    "expr": "indata('treeClickStorePerm','id', datum.id)"
+                },
+                {
+                    "type": "lookup",
+                    "from": "treeCalcs",
+                    "key": "id",
+                    "fields": ["parent"],
+                    "values": ["x", "y"],
+                    "as": ["parent_x", "parent_y"],
+                    "default": null
+                },
+                {
+                    "type": "window",
+                    "sort": {"field": "id", "order": "ascending"},
+                    "ops": ["row_number"],
+                    "fields": ["id"],
+                    "groupby": ["parent", "isVertical"],
+                    "as": ["rank"]
+                },
+                {
+                    "type": "formula",
+                    "expr": "datum.LevelId == 1 ? 0 : datum.LevelId == 2 && !datum.isVertical ? datum.parent_x + nodeWidth + horizontalNodeGap : datum.LevelId == 2 && datum.isVertical ? datum.parent_x + nodeWidth/2 - nodeWidth/4 : datum.LevelId == 3 && !datum.isVertical ? datum.parent_x + nodeWidth + horizontalNodeGap : datum.LevelId == 3 && datum.isVertical ? datum.parent_x : datum.LevelId == 4 ? datum.parent_x : datum.x",
+                    "as": "x"
+                },
+                {
+                    "type": "formula",
+                    "expr": "datum.LevelId == 1 ? 0 : datum.LevelId == 2 && !datum.isVertical ? datum.parent_y : datum.LevelId == 2 && datum.isVertical ? datum.parent_y + nodeHeight + verticalNodeGap + (datum.rank - 1) * (nodeHeight + verticalNodeGap) : datum.LevelId == 3 && !datum.isVertical ? datum.parent_y : datum.LevelId == 3 && datum.isVertical ? datum.parent_y + nodeHeight + verticalNodeGap + (datum.rank - 1) * (nodeHeight + verticalNodeGap) : datum.LevelId == 4 ? datum.parent_y + nodeHeight + verticalNodeGap + (datum.rank - 1) * (nodeHeight + verticalNodeGap) : datum.y",
+                    "as": "y"
+                },
+                {
+                    "type": "formula",
+                    "expr": "scale('xscale', datum.x)",
+                    "as": "xscaled"
+                },
+                {
+                    "type": "formula",
+                    "expr": "scale('yscale', datum.y)",
+                    "as": "yscaled"
+                },
+                {
+                    "type": "lookup",
+                    "from": "treeChildren",
+                    "key": "parent",
+                    "fields": ["id"],
+                    "values": ["childrenObjects", "childrenIds"]
+                },
+                {
+                    "type": "formula",
+                    "expr": "reverse(pluck(treeAncestors('treeCalcs', datum.id), 'id'))[1]",
+                    "as": "treeParent"
+                },
+                {
+                    "type": "formula",
+                    "as": "wrapBreak",
+                    "expr": "length(datum.title) <= wrapChars ? -1 : (indexof(slice(datum.title, wrapChars, length(datum.title)),' ')>=0 ? wrapChars + indexof(slice(datum.title, wrapChars, length(datum.title)),' ') : wrapChars)"
+                },
+                {
+                    "type": "formula",
+                    "as": "title_wrapped",
+                    "expr": "datum.wrapBreak < 0 ? datum.title : slice(datum.title, 0, datum.wrapBreak) + '\\n' + slice(datum.title, datum.wrapBreak + (slice(datum.title, datum.wrapBreak, datum.wrapBreak+1)==' ' ? 1 : 0), length(datum.title))"
+                }
+            ]
+        },
+        {
+            "name": "links",
+            "source": "treeLayout",
+            "transform": [
+                {
+                    "type": "treelinks"
+                },
+                {
+                    "type": "linkpath",
+                    "orient": "horizontal",
+                    "shape": "orthogonal",
+                    "sourceY": {"expr": "scale('yscale', datum.source.y + nodeHeight/2)"},
+                    "sourceX": {"expr": "scale('xscale', datum.source.x + nodeWidth/2)"},
+                    "targetY": {"expr": "scale('yscale', datum.target.y + nodeHeight/2)"},
+                    "targetX": {"expr": "scale('xscale', datum.target.x + nodeWidth/2)"}
+                },
+                {"type": "filter", "expr": "indata('treeClickStorePerm', 'id', datum.target.id) && datum.target.depth <= 5"}
+            ]
+        }
+    ],
+    "scales": [
+        {
+            "name": "xscale",
+            "zero": false,
+            "domain": {"signal": "xdom"},
+            "range": {"signal": "xrange"}
+        },
+        {
+            "name": "yscale",
+            "zero": false,
+            "domain": {"signal": "ydom"},
+            "range": {"signal": "yrange"}
+        },
+        {
+            "name": "colour",
+            "type": "ordinal",
+            "range": ["#002A6F", "#002A6F", "#002A6F", "#002A6F", "#002A6F"],
+            "domain": {
+                "data": "treeLayout",
+                "field": "treeParent"
+            }
+        }
+    ],
+    "marks": [
+        {
+            "type": "path",
+            "interactive": false,
+            "from": {"data": "links"},
+            "encode": {
+                "update": {
+                    "path": {"field": "path"},
+                    "strokeWidth": {"signal": "indexof(nodeHighlight, datum.target.id)> -1? 2.5:0.4"},
+                    "stroke": {
+                        "scale": "colour",
+                        "signal": "reverse(pluck(treeAncestors('treeCalcs', datum.target.id), 'id'))[1]"
+                    }
+                }
+            }
+        },
+        {
+            "name": "node",
+            "description": "The parent node",
+            "type": "group",
+            "clip": false,
+            "from": {"data": "treeLayout"},
+            "encode": {
+                "update": {
+                    "xc": {"signal": "scale('xscale', datum.x + nodeWidth/2)"},
+                    "width": {"signal": "scaledNodeWidth"},
+                    "yc": {"field": "y", "scale": "yscale"},
+                    "height": {"signal": "scaledNodeHeight"},
+                    "fill": {"value": "white"},
+                    "stroke": {"signal": "merge(hsl(scale('colour', datum.treeParent)), {l:0.79})"},
+                    "cornerRadius": {"value": 2},
+                    "cursor": {"signal": "datum.children>0?'pointer':''"},
+                    "tooltip": {"signal": ""}
+                }
+            },
+            "marks": [
+                {
+                    "name": "highlight",
+                    "description": "highlight",
+                    "type": "rect",
+                    "interactive": false,
+                    "encode": {
+                        "update": {
+                            "x": {"signal": "item.mark.group.x1"},
+                            "y": {"signal": "0"},
+                            "fill": {"signal": "indexof(nodeHighlight, parent.id)> -1? merge(hsl(scale('colour', parent.treeParent)), {l:0.82}):0"},
+                            "stroke": {"signal": "indexof(nodeHighlight, parent.id)> -1? merge(hsl(scale('colour', parent.treeParent)), {l:0.79}):0"},
+                            "height": {"signal": "item.mark.group.height"},
+                            "width": {"signal": "item.mark.group.width"}
+                        }
+                    }
+                },
+                {
+                    "type": "text",
+                    "interactive": false,
+                    "name": "name",
+                    "encode": {
+                        "update": {
+                            "x": {"signal": "item.mark.group.width/2"},
+                            "y": {"signal": "(22 / span(xdom)) * width"},
+                            "align": {"value": "center"},
+                            "fontWeight": {"value": "800"},
+                            "baseline": {"value": "top"},
+                            "fill": {"scale": "colour", "signal": "parent.treeParent"},
+                            "text": {"signal": "parent.title_wrapped"},
+                            "lineBreak": {"value": "\n"},
+                            "lineHeight": {"signal": "scaledFont13 * 1.15"},
+                            "fontSize": {"signal": "scaledFont13"},
+                            "limit": {"signal": "scaledNodeWidth-20"},
+                            "font": {"value": "Calibri"}
+                        }
+                    }
+                },
+                {
+                    "type": "text",
+                    "interactive": false,
+                    "name": "node children",
+                    "encode": {
+                        "update": {
+                            "x": {"signal": "item.mark.group.width - (9/ span(xdom))*width"},
+                            "y": {"signal": "item.mark.group.height/2"},
+                            "align": {"value": "right"},
+                            "baseline": {"value": "middle"},
+                            "fill": {"scale": "colour", "signal": "parent.treeParent"},
+                            "text": {"signal": "parent.children>0?parent.children:''"},
+                            "fontSize": {"signal": "scaledFont12"},
+                            "font": {"value": "Calibri"}
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}
