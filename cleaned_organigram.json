@@ -1,0 +1,297 @@
+{
+    "$schema": "https://vega.github.io/schema/vega/v5.json",
+    "autosize": {
+        "type": "fit",
+        "contains": "padding",
+        "resize": true
+    },
+    "description": "Cleaned IWB Organigram",
+    "background": null,
+    "padding": 50,
+    "signals": [
+        {
+            "name": "nodeWidth",
+            "value": 300
+        },
+        {
+            "name": "nodeHeight",
+            "value": 70
+        },
+        {
+            "name": "verticalGap",
+            "value": 80
+        },
+        {
+            "name": "horizontalGap", 
+            "value": 350
+        },
+        {
+            "name": "sideOffset",
+            "value": 450
+        },
+        {
+            "name": "countryChildrenScale",
+            "value": 1.25
+        },
+        {
+            "name": "startingDepth",
+            "value": 99,
+            "on": [
+                {
+                    "events": {
+                        "type": "timer",
+                        "throttle": 0
+                    },
+                    "update": "-1"
+                }
+            ]
+        },
+        {
+            "name": "node",
+            "value": 0,
+            "on": [
+                {
+                    "events": {
+                        "type": "click",
+                        "markname": "node"
+                    },
+                    "update": "datum.id"
+                },
+                {
+                    "events": {
+                        "type": "timer",
+                        "throttle": 10
+                    },
+                    "update": "0"
+                }
+            ]
+        },
+        {
+            "name": "nodeHighlight",
+            "value": "[0]",
+            "on": [
+                {
+                    "events": {
+                        "type": "mouseover",
+                        "markname": "node"
+                    },
+                    "update": "pluck(treeAncestors('tree', datum.id), 'id')"
+                },
+                {
+                    "events": {
+                        "type": "mouseout"
+                    },
+                    "update": "[0]"
+                }
+            ]
+        },
+        {
+            "name": "isExpanded",
+            "value": 0,
+            "on": [
+                {
+                    "events": {
+                        "type": "click",
+                        "markname": "node"
+                    },
+                    "update": "datum.children > 0 && indata('visibleNodes', 'id', datum.childrenIds[0])?true:false"
+                }
+            ]
+        },
+        // Pan and zoom signals (simplified)
+        {
+            "name": "xrange",
+            "update": "[0, width]"
+        },
+        {
+            "name": "yrange", 
+            "update": "[0, height]"
+        },
+        {
+            "name": "xdom",
+            "value": [0, 2000]
+        },
+        {
+            "name": "ydom",
+            "value": [0, 1500]
+        },
+        {
+            "name": "scaledNodeWidth",
+            "update": "(nodeWidth/ span(xdom))*width"
+        },
+        {
+            "name": "scaledNodeHeight",
+            "update": "abs(nodeHeight/ span(ydom))*height"
+        },
+        {
+            "name": "scaledFont",
+            "update": "(16/ span(xdom))*width"
+        }
+    ],
+    "data": [
+        {
+            "name": "dataset"
+        },
+        {
+            "name": "processedData",
+            "source": "dataset",
+            "transform": [
+                // Clean and rename columns
+                { "type": "formula", "as": "h1", "expr": "trim(datum.horizontal_level_1 || '')" },
+                { "type": "formula", "as": "v1", "expr": "trim(datum.vertikal_level_1 || '')" },
+                { "type": "formula", "as": "h2", "expr": "trim(datum.horizontal_level_2 || '')" },
+                { "type": "formula", "as": "v2", "expr": "trim(datum.vertikal_level_2 || '')" },
+                { "type": "formula", "as": "h3", "expr": "trim(datum.horizontal_level_3 || '')" },
+                { "type": "formula", "as": "v3", "expr": "trim(datum.vertikal_level_3 || '')" },
+                { "type": "formula", "as": "h4", "expr": "trim(datum.horizontal_level_4 || '')" },
+                { "type": "formula", "as": "v4", "expr": "trim(datum.vertikal_level_4 || '')" },
+                { "type": "filter", "expr": "datum.h1 != '' && datum.h1 != null" }
+            ]
+        },
+        {
+            "name": "hierarchy",
+            "source": "processedData", 
+            "transform": [
+                // Create hierarchy structure
+                { "type": "formula", "expr": "{key: datum.h1, parent: null, level: 1, isVertical: false}", "as": "l1" },
+                { "type": "formula", "expr": "datum.h2 != '' ? {key: datum.h1 + '|' + datum.h2, parent: datum.h1, level: 2, isVertical: false} : null", "as": "l2h" },
+                { "type": "formula", "expr": "datum.v2 != '' && datum.v2 != datum.h2 ? {key: datum.h1 + '|' + datum.v2, parent: datum.h1, level: 2, isVertical: true} : null", "as": "l2v" },
+                { "type": "formula", "expr": "datum.h3 != '' && datum.h2 != '' ? {key: datum.h1 + '|' + datum.h2 + '|' + datum.h3, parent: datum.h1 + '|' + datum.h2, level: 3, isVertical: false} : null", "as": "l3h" },
+                { "type": "formula", "expr": "datum.v3 != '' && datum.v2 != '' && datum.v3 != datum.h3 ? {key: datum.h1 + '|' + datum.v2 + '|' + datum.v3, parent: datum.h1 + '|' + datum.v2, level: 3, isVertical: true} : null", "as": "l3v" },
+                { "type": "formula", "expr": "datum.v4 != '' && datum.h3 != '' ? {key: datum.h1 + '|' + datum.h2 + '|' + datum.h3 + '|' + datum.v4, parent: datum.h1 + '|' + datum.h2 + '|' + datum.h3, level: 4, isVertical: true} : null", "as": "l4v" },
+                
+                { "type": "fold", "fields": ["l1", "l2h", "l2v", "l3h", "l3v", "l4v"] },
+                { "type": "filter", "expr": "datum.value != null" },
+                { "type": "formula", "expr": "datum.value.key", "as": "id" },
+                { "type": "formula", "expr": "reverse(split(datum.value.key,'|'))[0]", "as": "title" },
+                { "type": "formula", "expr": "datum.value.parent", "as": "parent" },
+                { "type": "formula", "expr": "datum.value.level", "as": "level" },
+                { "type": "formula", "expr": "datum.value.isVertical", "as": "isVertical" },
+                { "type": "filter", "expr": "isValid(datum.title) && datum.title != ''" },
+                
+                // Remove duplicates
+                { "type": "aggregate", "groupby": ["id", "parent", "title", "level", "isVertical"] },
+                { "type": "formula", "expr": "lower(datum.title)", "as": "title_lower" }
+            ]
+        },
+        {
+            "name": "tree",
+            "source": "hierarchy",
+            "transform": [
+                { "type": "stratify", "key": "id", "parentKey": "parent" },
+                { "type": "tree", "method": "tidy", "as": ["x", "y", "depth", "children"] }
+            ]
+        },
+        {
+            "name": "visibleNodes",
+            "source": "tree",
+            "transform": [
+                // Filter for visible nodes based on expansion state
+                { "type": "filter", "expr": "startingDepth != -1 ? datum.depth <= (startingDepth + 2) : true" },
+                
+                // Calculate positions based on type
+                { "type": "formula", "expr": "datum.level", "as": "nodeLevel" },
+                { "type": "formula", "expr": "datum.isVertical", "as": "isVertical" },
+                
+                // Determine node type and positioning
+                { "type": "formula", "as": "nodeType", "expr": "indexof(datum.title_lower, 'iwb renewable power ag') >= 0 ? 'root' : indexof(datum.title_lower, 'iwb energie') >= 0 ? 'country' : datum.isVertical ? 'vertical' : 'horizontal'" },
+                
+                // Calculate X position
+                { "type": "formula", "as": "x_pos", "expr": "datum.nodeType == 'root' ? 0 : datum.nodeType == 'country' ? datum.x * horizontalGap : datum.nodeType == 'vertical' ? datum.x * horizontalGap + 50 : datum.x * horizontalGap" },
+                
+                // Calculate Y position  
+                { "type": "formula", "as": "y_pos", "expr": "datum.nodeType == 'root' ? 0 : datum.nodeType == 'vertical' ? datum.y * verticalGap + 100 : datum.y * verticalGap" },
+                
+                // Side positioning for special nodes
+                { "type": "formula", "as": "isSideNode", "expr": "indexof(datum.title_lower, 'kraftwerke oberhasli') >= 0 || indexof(datum.title_lower, 'juvent sa') >= 0 || indexof(datum.title_lower, 'swisspower') >= 0" },
+                { "type": "formula", "as": "x_pos", "expr": "datum.isSideNode ? datum.x_pos + sideOffset : datum.x_pos" },
+                
+                // Text wrapping
+                { "type": "formula", "as": "title_wrapped", "expr": "length(datum.title) > 25 ? slice(datum.title, 0, 25) + '\\n' + slice(datum.title, 25) : datum.title" }
+            ]
+        },
+        {
+            "name": "links", 
+            "source": "visibleNodes",
+            "transform": [
+                { "type": "treelinks" },
+                { "type": "linkpath", "orient": "horizontal", "shape": "orthogonal",
+                  "sourceX": { "expr": "scale('xscale', datum.source.x_pos + nodeWidth/2)" },
+                  "sourceY": { "expr": "scale('yscale', datum.source.y_pos + nodeHeight/2)" },
+                  "targetX": { "expr": "scale('xscale', datum.target.x_pos + nodeWidth/2)" },
+                  "targetY": { "expr": "scale('yscale', datum.target.y_pos + nodeHeight/2)" }
+                }
+            ]
+        }
+    ],
+    "scales": [
+        {
+            "name": "xscale",
+            "domain": { "signal": "xdom" },
+            "range": { "signal": "xrange" }
+        },
+        {
+            "name": "yscale", 
+            "domain": { "signal": "ydom" },
+            "range": { "signal": "yrange" }
+        },
+        {
+            "name": "colorScale",
+            "type": "ordinal",
+            "range": ["#002A6F", "#0066CC", "#4D94FF"],
+            "domain": { "data": "visibleNodes", "field": "nodeLevel" }
+        }
+    ],
+    "marks": [
+        // Links
+        {
+            "type": "path",
+            "from": { "data": "links" },
+            "encode": {
+                "update": {
+                    "path": { "field": "path" },
+                    "stroke": { "value": "#002A6F" },
+                    "strokeWidth": { "value": 1 },
+                    "opacity": { "value": 0.7 }
+                }
+            }
+        },
+        // Nodes
+        {
+            "name": "node",
+            "type": "group", 
+            "from": { "data": "visibleNodes" },
+            "encode": {
+                "update": {
+                    "x": { "signal": "scale('xscale', datum.x_pos)" },
+                    "y": { "signal": "scale('yscale', datum.y_pos)" },
+                    "width": { "signal": "scaledNodeWidth * (datum.nodeType == 'country' ? countryChildrenScale : 1)" },
+                    "height": { "signal": "scaledNodeHeight" },
+                    "fill": { "value": "white" },
+                    "stroke": { "scale": "colorScale", "field": "nodeLevel" },
+                    "strokeWidth": { "value": 2 },
+                    "cornerRadius": { "value": 5 },
+                    "cursor": { "signal": "datum.children > 0 ? 'pointer' : 'default'" }
+                }
+            },
+            "marks": [
+                {
+                    "type": "text",
+                    "encode": {
+                        "update": {
+                            "x": { "signal": "parent.width / 2" },
+                            "y": { "signal": "parent.height / 2" },
+                            "align": { "value": "center" },
+                            "baseline": { "value": "middle" },
+                            "text": { "signal": "parent.title_wrapped" },
+                            "fontSize": { "signal": "scaledFont" },
+                            "fontWeight": { "value": "bold" },
+                            "fill": { "scale": "colorScale", "signal": "parent.nodeLevel" },
+                            "lineBreak": { "value": "\\n" }
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}
