@@ -1,0 +1,107 @@
+=== PDF Extractor - Finale Version ===
+
+📄 PDF geöffnet: 1 Seiten gefunden
+
+
+============================================================
+📖 Seite 1
+============================================================
+✅ Tabelle gefunden mit 20 Zeilen
+
+Zeile 0: ['No: 1001', 'SupervisionID: TEMP_HIGH', 'Name: Temperature High Alert']
+
+🆕 Neuer Datensatz: No = 1001
+  → SupervisionID: TEMP_HIGH
+  → Name: Temperature High Alert
+
+Zeile 1: ['Log text: Temperature exceeds thresho ld']
+  → Log text: Temperature exceeds thresho ld
+
+Zeile 2: ['Subsystem name: HVAC', 'Type: Alarm']
+  → Subsystem name: HVAC
+  → Type: Alarm
+
+Zeile 3: ['Timeout: 30s', 'Acknowledgement: Manual']
+  → Timeout: 30s
+  → Acknowledgement: Manual
+
+Zeile 4: ['Shutdown type: Immediate', 'Allowed attempts: 3']
+  → Shutdown type: Immediate
+  → Allowed attempts: 3
+
+Zeile 5: ['Time window: 5min', 'Max time disconnect: 10min']
+  → Time window: 5min
+  → Max time disconnect: 10min
+
+Zeile 6: ['Max time eliminate: 30min', 'Stabilize period: 2min']
+  → Max time eliminate: 30min
+  → Stabilize period: 2min
+
+Zeile 7: ['Category: Critical']
+  → Category: Critical
+
+Zeile 8: ['Criteria: Temperature > 80°C for more than 30 seconds']
+  → Criteria: Temperature > 80°C for more than 30 seconds
+
+Zeile 10: ['No: 1002', 'SupervisionID: PRESS_LOW', 'Name: Pressure Low Warning']
+✅ Datensatz 1 gespeichert
+
+🆕 Neuer Datensatz: No = 1002
+  → SupervisionID: PRESS_LOW
+  → Name: Pressure Low Warning
+
+Zeile 11: ['Log text: System pressure below minim um']
+  → Log text: System pressure below minim um
+
+Zeile 12: ['Subsystem name: Hydraulics', 'Type: Warning']
+  → Subsystem name: Hydraulics
+  → Type: Warning
+
+Zeile 13: ['Timeout: 60s', 'Acknowledgement: Auto']
+  → Timeout: 60s
+  → Acknowledgement: Auto
+
+Zeile 14: ['Shutdown type: Controlled', 'Allowed attempts: 5']
+  → Shutdown type: Controlled
+  → Allowed attempts: 5
+
+Zeile 15: ['Time window: 10min', 'Max time disconnect: 15min']
+  → Time window: 10min
+  → Max time disconnect: 15min
+
+Zeile 16: ['Max time eliminate: 60min', 'Stabilize period: 5min']
+  → Max time eliminate: 60min
+  → Stabilize period: 5min
+
+Zeile 17: ['Category: Major']
+  → Category: Major
+
+Zeile 18: ['Criteria: Pressure < 10 bar']
+  → Criteria: Pressure < 10 bar
+
+✅ Letzter Datensatz 2 gespeichert
+
+============================================================
+📊 STATISTIKEN:
+============================================================
+Gesamtzahl Datensätze: 2
+
+Spalten mit Daten:
+  - No: 2 Einträge
+  - SupervisionID: 2 Einträge
+  - Name: 2 Einträge
+  - Log text: 2 Einträge
+  - Subsystem name: 2 Einträge
+  - Type: 2 Einträge
+  - Timeout: 2 Einträge
+  - Acknowledgement: 2 Einträge
+  - Shutdown type: 2 Einträge
+  - Allowed attempts: 2 Einträge
+  - Time window: 2 Einträge
+  - Max time disconnect: 2 Einträge
+  - Max time eliminate: 2 Einträge
+  - Stabilize period: 2 Einträge
+  - Category: 2 Einträge
+  - Criteria: 2 Einträge
+
+✅ Excel-Datei gespeichert: alarms_extracted.xlsx
