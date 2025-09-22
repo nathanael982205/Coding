@@ -1,0 +1,478 @@
+{
+    "$schema": "https://vega.github.io/schema/vega/v5.json",
+    "autosize": {
+        "type": "fit",
+        "contains": "padding",
+        "resize": true
+    },
+    "description": "Wind Power and Wind Speed Visualization with Error Points",
+    "background": null,
+    "padding": {
+        "left": 0,
+        "right": 0,
+        "top": 30,
+        "bottom": 0
+    },
+    "width": 800,
+    "height": 400,
+    "signals": [
+        {
+            "name": "detailDomain"
+        },
+        {
+            "name": "brush",
+            "value": [0, 0],
+            "on": [
+                {
+                    "events": "@overview:pointerdown",
+                    "update": "[x(), x()]"
+                },
+                {
+                    "events": "[@overview:pointerdown, window:pointerup] > window:pointermove!",
+                    "update": "[brush[0], clamp(x(), 0, width)]"
+                },
+                {
+                    "events": {"signal": "delta"},
+                    "update": "clampRange([anchor[0] + delta, anchor[1] + delta], 0, width)"
+                }
+            ]
+        },
+        {
+            "name": "isDay",
+            "update": "(domain('xscaleTime')[1]-domain('xscaleTime')[0]) <= 86400000"
+        },
+        {
+            "name": "midTick",
+            "update": "(domain('xscaleTime')[0] + domain('xscaleTime')[1]) / 2"
+        },
+        {
+            "name": "anchor",
+            "value": null,
+            "on": [
+                {
+                    "events": "@brush:pointerdown",
+                    "update": "slice(brush)"
+                }
+            ]
+        },
+        {
+            "name": "xdown",
+            "value": 0,
+            "on": [
+                {
+                    "events": "@brush:pointerdown",
+                    "update": "x()"
+                }
+            ]
+        },
+        {
+            "name": "delta",
+            "value": 0,
+            "on": [
+                {
+                    "events": "[@brush:pointerdown, window:pointerup] > window:pointermove!",
+                    "update": "x() - xdown"
+                }
+            ]
+        }
+    ],
+    "data": [
+        {
+            "name": "dataset",
+            "values": [
+                {"date": "2024-01-01T00:00:00", "Mittlere Wirkleistung": 1200, "Mittlere Windgeschwindigkeit": 8.5},
+                {"date": "2024-01-01T01:00:00", "Mittlere Wirkleistung": 1500, "Mittlere Windgeschwindigkeit": 9.2},
+                {"date": "2024-01-01T02:00:00", "Mittlere Wirkleistung": 1800, "Mittlere Windgeschwindigkeit": 10.1},
+                {"date": "2024-01-01T03:00:00", "Mittlere Wirkleistung": 2000, "Mittlere Windgeschwindigkeit": 11.5},
+                {"date": "2024-01-01T04:00:00", "Mittlere Wirkleistung": 1700, "Mittlere Windgeschwindigkeit": 9.8},
+                {"date": "2024-01-01T05:00:00", "Mittlere Wirkleistung": 1400, "Mittlere Windgeschwindigkeit": 8.9},
+                {"date": "2024-01-01T06:00:00", "Mittlere Wirkleistung": 1600, "Mittlere Windgeschwindigkeit": 9.5},
+                {"date": "2024-01-01T07:00:00", "Mittlere Wirkleistung": 1900, "Mittlere Windgeschwindigkeit": 10.8},
+                {"date": "2024-01-01T08:00:00", "Mittlere Wirkleistung": 2100, "Mittlere Windgeschwindigkeit": 12.2},
+                {"date": "2024-01-01T09:00:00", "Mittlere Wirkleistung": 2200, "Mittlere Windgeschwindigkeit": 12.8},
+                {"date": "2024-01-01T10:00:00", "Mittlere Wirkleistung": 2300, "Mittlere Windgeschwindigkeit": 13.5},
+                {"date": "2024-01-01T11:00:00", "Mittlere Wirkleistung": 2400, "Mittlere Windgeschwindigkeit": 14.1},
+                {"date": "2024-01-01T12:00:00", "Mittlere Wirkleistung": 2500, "Mittlere Windgeschwindigkeit": 14.8}
+            ],
+            "transform": [
+                {"type": "formula", "expr": "datetime(datum.date)", "as": "date_parsed"},
+                {"type": "formula", "expr": "+datum['Mittlere Wirkleistung']", "as": "power"},
+                {"type": "formula", "expr": "+datum['Mittlere Windgeschwindigkeit']", "as": "wind_speed"},
+                {"type": "filter", "expr": "datum.power != null && datum.wind_speed != null && datum.date_parsed != null"},
+                {"type": "collect", "sort": {"field": "date_parsed"}}
+            ]
+        },
+        {
+            "name": "events",
+            "values": [
+                {"date": "2024-01-01T02:30:00", "WLOG_Code": "E101"},
+                {"date": "2024-01-01T05:15:00", "WLOG_Code": "W205"},
+                {"date": "2024-01-01T08:45:00", "WLOG_Code": "E303"},
+                {"date": "2024-01-01T11:00:00", "WLOG_Code": "W107"}
+            ],
+            "transform": [
+                {"type": "formula", "expr": "datetime(datum.date)", "as": "t_event"},
+                {"type": "filter", "expr": "isValid(datum.t_event) && isValid(datum.WLOG_Code)"},
+                {"type": "filter", "expr": "!isValid(detailDomain) || (datum.t_event >= detailDomain[0] && datum.t_event <= detailDomain[1])"}
+            ]
+        }
+    ],
+    "marks": [
+        {
+            "type": "group",
+            "name": "detail",
+            "encode": {
+                "enter": {
+                    "width": {"signal": "width"},
+                    "height": {"signal": "height * 0.7"},
+                    "x": {"value": 0},
+                    "y": {"value": 0}
+                }
+            },
+            "scales": [
+                {
+                    "name": "xscaleTime",
+                    "type": "time",
+                    "range": "width",
+                    "domain": {
+                        "fields": [
+                            {"data": "dataset", "field": "date_parsed"},
+                            {"data": "events", "field": "t_event"}
+                        ]
+                    },
+                    "domainRaw": {"signal": "detailDomain"}
+                },
+                {
+                    "name": "yscale",
+                    "type": "linear",
+                    "domain": {"data": "dataset", "field": "wind_speed"},
+                    "range": {"signal": "[height * 0.7, 0]"},
+                    "nice": true,
+                    "zero": true
+                },
+                {
+                    "name": "yscale2",
+                    "type": "linear",
+                    "domain": {"data": "dataset", "field": "power"},
+                    "domainMin": 0,
+                    "range": {"signal": "[height * 0.7, 0]"},
+                    "nice": true,
+                    "zero": true
+                }
+            ],
+            "axes": [
+                {
+                    "scale": "xscaleTime",
+                    "orient": "bottom",
+                    "grid": false,
+                    "labelColor": "#000000",
+                    "labelFontSize": 16,
+                    "labelFont": "Segoe UI",
+                    "labelAngle": 0,
+                    "labelPadding": 5
+                },
+                {
+                    "scale": "xscaleTime",
+                    "orient": "bottom",
+                    "grid": true,
+                    "labels": false,
+                    "ticks": false,
+                    "domain": false,
+                    "zindex": 0,
+                    "gridColor": "#e0e0e0",
+                    "gridDash": [2, 2],
+                    "gridOpacity": 1
+                },
+                {
+                    "scale": "yscale",
+                    "orient": "left",
+                    "grid": true,
+                    "gridColor": "#e0e0e0",
+                    "labelColor": "#000000",
+                    "labelFont": "Segoe UI",
+                    "labelFontSize": 20,
+                    "titleColor": "#000000",
+                    "title": "m/s",
+                    "titlePadding": 20,
+                    "titleFontSize": 20,
+                    "titleFont": "DIN",
+                    "titleFontWeight": "normal"
+                },
+                {
+                    "scale": "yscale2",
+                    "orient": "right",
+                    "labelColor": "#000000",
+                    "labelFont": "Segoe UI",
+                    "labelBound": false,
+                    "labelFlush": false,
+                    "labelFontSize": 20,
+                    "titleColor": "#000000",
+                    "title": "kW",
+                    "titlePadding": 20,
+                    "titleFontSize": 20,
+                    "titleFont": "DIN",
+                    "grid": false,
+                    "titleFontWeight": "normal"
+                }
+            ],
+            "marks": [
+                {
+                    "type": "group",
+                    "encode": {
+                        "enter": {
+                            "width": {"field": {"group": "width"}},
+                            "height": {"field": {"group": "height"}},
+                            "clip": {"value": true}
+                        }
+                    },
+                    "marks": [
+                        {
+                            "type": "rect",
+                            "name": "bars",
+                            "from": {"data": "dataset"},
+                            "encode": {
+                                "enter": {
+                                    "fill": {"value": "#118DFF"},
+                                    "fillOpacity": {"value": 0.5}
+                                },
+                                "update": {
+                                    "xc": {"scale": "xscaleTime", "field": "date_parsed"},
+                                    "width": {"value": 5},
+                                    "y": {"scale": "yscale", "field": "wind_speed"},
+                                    "y2": {"scale": "yscale", "value": 0},
+                                    "tooltip": {
+                                        "signal": "{'Datum': timeFormat(datum.date_parsed, '%d.%m.%Y %H:%M'), 'Windgeschwindigkeit': format(datum.wind_speed, '.1f') + ' m/s', 'Wirkleistung': format(datum.power, '.1f') + ' kW'}"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "type": "line",
+                            "name": "line",
+                            "from": {"data": "dataset"},
+                            "encode": {
+                                "enter": {
+                                    "stroke": {"value": "#12239E"},
+                                    "strokeWidth": {"value": 3}
+                                },
+                                "update": {
+                                    "x": {"scale": "xscaleTime", "field": "date_parsed"},
+                                    "y": {"scale": "yscale2", "field": "power"},
+                                    "defined": {"signal": "isValid(datum.power) && datum.power > 0"}
+                                }
+                            }
+                        },
+                        {
+                            "type": "symbol",
+                            "from": {"data": "events"},
+                            "encode": {
+                                "enter": {
+                                    "shape": {"value": "circle"},
+                                    "size": {"value": 200},
+                                    "fill": {"value": "red"},
+                                    "stroke": {"value": "darkred"},
+                                    "strokeWidth": {"value": 2},
+                                    "fillOpacity": {"value": 0.8}
+                                },
+                                "update": {
+                                    "x": {"scale": "xscaleTime", "field": "t_event"},
+                                    "y": {"scale": "yscale2", "value": 0},
+                                    "tooltip": {
+                                        "signal": "{'Zeit': timeFormat(datum.t_event, '%d.%m.%Y %H:%M'), 'WLOG Code': datum.WLOG_Code}"
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "group",
+            "name": "overview",
+            "signals": [
+                {
+                    "name": "detailDomain",
+                    "push": "outer",
+                    "on": [
+                        {
+                            "events": {"signal": "brush"},
+                            "update": "brush[0] !== brush[1] ? invert('xOverview', brush) : null"
+                        }
+                    ]
+                }
+            ],
+            "encode": {
+                "enter": {
+                    "x": {"value": 0},
+                    "y": {"signal": "height * 0.75"},
+                    "width": {"signal": "width"},
+                    "height": {"signal": "height * 0.15"},
+                    "fill": {"value": "transparent"}
+                }
+            },
+            "scales": [
+                {
+                    "name": "xOverview",
+                    "type": "time",
+                    "range": "width",
+                    "domain": {"data": "dataset", "field": "date_parsed"}
+                },
+                {
+                    "name": "yOverview",
+                    "type": "linear",
+                    "range": {"signal": "[height * 0.15, 0]"},
+                    "domain": {"data": "dataset", "field": "power"},
+                    "nice": true,
+                    "zero": true
+                }
+            ],
+            "axes": [
+                {
+                    "orient": "bottom",
+                    "scale": "xOverview",
+                    "labelFont": "Segoe UI",
+                    "labelFontSize": 17
+                }
+            ],
+            "marks": [
+                {
+                    "type": "area",
+                    "interactive": false,
+                    "from": {"data": "dataset"},
+                    "encode": {
+                        "update": {
+                            "x": {"scale": "xOverview", "field": "date_parsed"},
+                            "y": {"scale": "yOverview", "field": "power"},
+                            "y2": {"scale": "yOverview", "value": 0},
+                            "fill": {"value": "#118DFF"},
+                            "fillOpacity": {"value": 0.3}
+                        }
+                    }
+                },
+                {
+                    "type": "rect",
+                    "name": "brush",
+                    "encode": {
+                        "enter": {
+                            "y": {"value": 0},
+                            "height": {"signal": "height * 0.15"},
+                            "fill": {"value": "#000000"},
+                            "fillOpacity": {"value": 0.2},
+                            "cursor": {"value": "move"}
+                        },
+                        "update": {
+                            "x": {"signal": "brush[0]"},
+                            "x2": {"signal": "brush[1]"}
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "type": "group",
+            "encode": {
+                "enter": {
+                    "x": {"signal": "width / 2"},
+                    "y": {"value": 0}
+                }
+            },
+            "marks": [
+                {
+                    "type": "group",
+                    "encode": {
+                        "enter": {
+                            "x": {"value": -350},
+                            "y": {"value": 0}
+                        }
+                    },
+                    "marks": [
+                        {
+                            "type": "rect",
+                            "encode": {
+                                "enter": {
+                                    "x": {"value": -10},
+                                    "y": {"value": -5},
+                                    "width": {"value": 15},
+                                    "height": {"value": 10},
+                                    "fill": {"value": "#118DFF"}
+                                }
+                            }
+                        },
+                        {
+                            "type": "text",
+                            "encode": {
+                                "enter": {
+                                    "x": {"value": 20},
+                                    "y": {"value": 0},
+                                    "text": {"value": "Mittlere Windgeschwindigkeit (m/s)"},
+                                    "baseline": {"value": "middle"},
+                                    "fill": {"value": "#000000"},
+                                    "fontSize": {"value": 20},
+                                    "font": {"value": "Segoe UI"},
+                                    "fontWeight": {"value": "bold"}
+                                }
+                            }
+                        },
+                        {
+                            "type": "path",
+                            "encode": {
+                                "enter": {
+                                    "x": {"value": 380},
+                                    "y": {"value": 0},
+                                    "path": {"value": "M0,0 L15,0"},
+                                    "stroke": {"value": "#12239E"},
+                                    "strokeWidth": {"value": 3}
+                                }
+                            }
+                        },
+                        {
+                            "type": "text",
+                            "encode": {
+                                "enter": {
+                                    "x": {"value": 410},
+                                    "y": {"value": 0},
+                                    "text": {"value": "Mittlere Wirkleistung (kW)"},
+                                    "baseline": {"value": "middle"},
+                                    "fill": {"value": "#000000"},
+                                    "fontSize": {"value": 22},
+                                    "font": {"value": "Segoe UI"},
+                                    "fontWeight": {"value": "bold"}
+                                }
+                            }
+                        },
+                        {
+                            "type": "symbol",
+                            "encode": {
+                                "enter": {
+                                    "x": {"value": 665},
+                                    "y": {"value": 0},
+                                    "shape": {"value": "circle"},
+                                    "size": {"value": 100},
+                                    "fill": {"value": "red"},
+                                    "stroke": {"value": "darkred"},
+                                    "strokeWidth": {"value": 2}
+                                }
+                            }
+                        },
+                        {
+                            "type": "text",
+                            "encode": {
+                                "enter": {
+                                    "x": {"value": 680},
+                                    "y": {"value": 0},
+                                    "text": {"value": "Fehlercodes"},
+                                    "baseline": {"value": "middle"},
+                                    "fill": {"value": "#000000"},
+                                    "fontSize": {"value": 20},
+                                    "font": {"value": "Segoe UI"},
+                                    "fontWeight": {"value": "bold"}
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
