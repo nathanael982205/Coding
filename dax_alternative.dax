@@ -1,0 +1,36 @@
+[Kostenträger [Verweis]] = 
+
+//Import 
+VAR _Import = ALL('Kostenträger')
+
+VAR _Add =
+    ADDCOLUMNS (
+        _Import,
+        "AE Rechnungskosten [EUR]", [value],
+        "Weiterverechneter Betrag [EUR]",
+            VAR _CurrentID = [id]
+            VAR _CurrentYear = [year_local]
+            VAR _CurrentMonth = [month_local]
+            RETURN
+                IF (
+                    _CurrentID = "170740664",
+                    CALCULATE (
+                        SUM ( 'Kostenträger'[value] ),
+                        'Kostenträger'[id] IN { "169924262", "169923030", "168940254" },
+                        'Kostenträger'[year_local] = _CurrentYear,
+                        'Kostenträger'[month_local] = _CurrentMonth
+                    ),
+                    IF (
+                        _CurrentID = "170741466",
+                        CALCULATE (
+                            SUM ( 'Kostenträger'[value] ),
+                            'Kostenträger'[id] = "223331079",
+                            'Kostenträger'[year_local] = _CurrentYear,
+                            'Kostenträger'[month_local] = _CurrentMonth
+                        ),
+                        BLANK()
+                    )
+                )
+    )
+RETURN
+    _Add
