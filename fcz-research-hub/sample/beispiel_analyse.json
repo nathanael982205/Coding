@@ -1,0 +1,616 @@
+{
+  "_hinweis": "Synthetische Beispielstruktur einer gespeicherten Analyse (Testdokument aus sample/make_test_pdf.py). Keine echte Studie.",
+  "analysis": {
+    "summary": {
+      "short_summary": "Testzusammenfassung",
+      "what_was_studied": {
+        "value": "NM fatigue",
+        "page": 1,
+        "quote": "Neuromuscular fatigue after match play",
+        "status": "verified",
+        "source_type": "author_statement",
+        "page_label": "101",
+        "check": {
+          "quote_check": "exact",
+          "coverage": 1.0
+        }
+      }
+    },
+    "bibliographic": {
+      "title": {
+        "value": "Neuromuscular fatigue after match play in professional soccer players",
+        "page": 1,
+        "quote": "Neuromuscular fatigue after match play in professional soccer players",
+        "status": "verified",
+        "source_type": "author_statement",
+        "page_label": "101",
+        "check": {
+          "quote_check": "exact",
+          "coverage": 1.0
+        }
+      },
+      "authors": {
+        "value": "Test Author, Second Author",
+        "page": 1,
+        "quote": "Test Author, Second Author",
+        "status": "verified",
+        "source_type": "author_statement",
+        "page_label": "101",
+        "check": {
+          "quote_check": "exact",
+          "coverage": 1.0
+        }
+      },
+      "year": {
+        "value": "2021",
+        "page": 1,
+        "quote": "Journal of Test Science 2021",
+        "status": "verified",
+        "source_type": "author_statement",
+        "page_label": "101",
+        "check": {
+          "quote_check": "exact",
+          "coverage": 1.0
+        }
+      },
+      "journal": {
+        "value": "Journal of Test Science",
+        "page": 1,
+        "quote": "Journal of Test Science",
+        "status": "verified",
+        "source_type": "author_statement",
+        "page_label": "101",
+        "check": {
+          "quote_check": "exact",
+          "coverage": 1.0
+        }
+      },
+      "doi": {
+        "value": "10.1234/jts.2021.001",
+        "page": 1,
+        "quote": "doi:10.1234/jts.2021.001",
+        "status": "verified",
+        "source_type": "author_statement",
+        "page_label": "101",
+        "check": {
+          "quote_check": "exact",
+          "coverage": 1.0
+        }
+      },
+      "keywords": {
+        "value": "Nicht berichtet",
+        "page": 0,
+        "quote": "",
+        "status": "not_reported",
+        "source_type": "author_statement",
+        "page_label": null,
+        "check": {
+          "quote_check": "no_quote"
+        }
+      },
+      "research_field": {
+        "value": "Sportwissenschaft",
+        "page": 0,
+        "quote": "",
+        "status": "verified",
+        "source_type": "ai_summary",
+        "page_label": null,
+        "check": {
+          "quote_check": "no_quote"
+        }
+      }
+    },
+    "design": {
+      "research_question": {
+        "value": "RQ",
+        "page": 1,
+        "quote": "this quote does not exist anywhere in the document text",
+        "status": "uncertain",
+        "source_type": "author_statement",
+        "page_label": "101",
+        "check": {
+          "quote_check": "not_found",
+          "coverage": 0.0,
+          "note": "Zitat nicht wörtlich im extrahierten Text gefunden – bitte im PDF prüfen."
+        }
+      },
+      "hypotheses": {
+        "value": "Nicht berichtet",
+        "page": 0,
+        "quote": "",
+        "status": "not_reported",
+        "source_type": "author_statement",
+        "page_label": null,
+        "check": {
+          "quote_check": "no_quote"
+        }
+      },
+      "study_type": {
+        "value": "Beobachtung",
+        "page": 2,
+        "quote": "Twenty professional soccer players participated",
+        "status": "verified",
+        "source_type": "author_statement",
+        "page_label": "102",
+        "check": {
+          "quote_check": "exact",
+          "coverage": 1.0
+        }
+      },
+      "design_category": "observational_longitudinal",
+      "temporal_direction": {
+        "value": "prospektiv",
+        "page": 0,
+        "quote": "",
+        "status": "uncertain",
+        "source_type": "ai_summary",
+        "page_label": null,
+        "check": {
+          "quote_check": "no_quote"
+        }
+      },
+      "duration": {
+        "value": "Nicht berichtet",
+        "page": 0,
+        "quote": "",
+        "status": "not_reported",
+        "source_type": "author_statement",
+        "page_label": null,
+        "check": {
+          "quote_check": "no_quote"
+        }
+      },
+      "n_timepoints": {
+        "value": "3",
+        "page": 2,
+        "quote": "at MD-1, MD+1 and MD+2",
+        "status": "verified",
+        "source_type": "author_statement",
+        "page_label": "102",
+        "check": {
+          "quote_check": "exact",
+          "coverage": 1.0,
+          "page_corrected_from": 3
+        }
+      },
+      "control_condition": {
+        "value": "Nicht berichtet",
+        "page": 0,
+        "quote": "",
+        "status": "not_reported",
+        "source_type": "author_statement",
+        "page_label": null,
+        "check": {
+          "quote_check": "no_quote"
+        }
+      },
+      "setting": {
+        "value": "Profi",
+        "page": 2,
+        "quote": "",
+        "status": "uncertain",
+        "source_type": "author_statement",
+        "page_label": "102",
+        "check": {
+          "quote_check": "no_quote",
+          "note": "Kein Originalzitat geliefert – Angabe bitte im PDF prüfen."
+        }
+      }
+    },
+    "sample": {
+      "n_participants": {
+        "value": "20 Profis",
+        "page": 2,
+        "quote": "Twenty professional soccer players participated",
+        "status": "verified",
+        "source_type": "author_statement",
+        "page_label": "102",
+        "check": {
+          "quote_check": "exact",
+          "coverage": 1.0
+        }
+      },
+      "n_numeric": 20,
+      "age": {
+        "value": "Nicht berichtet",
+        "page": 0,
+        "quote": "",
+        "status": "not_reported",
+        "source_type": "author_statement",
+        "page_label": null,
+        "check": {
+          "quote_check": "no_quote"
+        }
+      },
+      "sex": {
+        "value": "Nicht berichtet",
+        "page": 0,
+        "quote": "",
+        "status": "not_reported",
+        "source_type": "author_statement",
+        "page_label": null,
+        "check": {
+          "quote_check": "no_quote"
+        }
+      },
+      "performance_level": {
+        "value": "professionell",
+        "page": 2,
+        "quote": "Twenty professional soccer players",
+        "status": "verified",
+        "source_type": "author_statement",
+        "page_label": "102",
+        "check": {
+          "quote_check": "exact",
+          "coverage": 1.0
+        }
+      },
+      "level_category": "professional",
+      "sport": {
+        "value": "Fußball",
+        "page": 2,
+        "quote": "professional soccer players",
+        "status": "verified",
+        "source_type": "author_statement",
+        "page_label": "102",
+        "check": {
+          "quote_check": "exact",
+          "coverage": 1.0
+        }
+      },
+      "sport_normalized": "Fußball",
+      "inclusion_exclusion": {
+        "value": "Nicht berichtet",
+        "page": 0,
+        "quote": "",
+        "status": "not_reported",
+        "source_type": "author_statement",
+        "page_label": null,
+        "check": {
+          "quote_check": "no_quote"
+        }
+      }
+    },
+    "methods": {
+      "instruments": {
+        "value": "Nicht berichtet",
+        "page": 0,
+        "quote": "",
+        "status": "not_reported",
+        "source_type": "author_statement",
+        "page_label": null,
+        "check": {
+          "quote_check": "no_quote"
+        }
+      },
+      "gps_system": {
+        "value": "Nicht berichtet",
+        "page": 0,
+        "quote": "",
+        "status": "not_reported",
+        "source_type": "author_statement",
+        "page_label": null,
+        "check": {
+          "quote_check": "no_quote"
+        }
+      },
+      "cmj_device": {
+        "value": "Nicht berichtet",
+        "page": 0,
+        "quote": "",
+        "status": "not_reported",
+        "source_type": "author_statement",
+        "page_label": null,
+        "check": {
+          "quote_check": "no_quote"
+        }
+      },
+      "measured_parameters": {
+        "value": "Nicht berichtet",
+        "page": 0,
+        "quote": "",
+        "status": "not_reported",
+        "source_type": "author_statement",
+        "page_label": null,
+        "check": {
+          "quote_check": "no_quote"
+        }
+      },
+      "load_variable_definitions": {
+        "value": "Nicht berichtet",
+        "page": 0,
+        "quote": "",
+        "status": "not_reported",
+        "source_type": "author_statement",
+        "page_label": null,
+        "check": {
+          "quote_check": "no_quote"
+        }
+      },
+      "measurement_timing": {
+        "value": "Nicht berichtet",
+        "page": 0,
+        "quote": "",
+        "status": "not_reported",
+        "source_type": "author_statement",
+        "page_label": null,
+        "check": {
+          "quote_check": "no_quote"
+        }
+      },
+      "procedure": {
+        "value": "Nicht berichtet",
+        "page": 0,
+        "quote": "",
+        "status": "not_reported",
+        "source_type": "author_statement",
+        "page_label": null,
+        "check": {
+          "quote_check": "no_quote"
+        }
+      },
+      "statistical_methods": {
+        "value": "Nicht berichtet",
+        "page": 0,
+        "quote": "",
+        "status": "not_reported",
+        "source_type": "author_statement",
+        "page_label": null,
+        "check": {
+          "quote_check": "no_quote"
+        }
+      },
+      "repeated_measures_handling": {
+        "value": "Nicht berichtet",
+        "page": 0,
+        "quote": "",
+        "status": "not_reported",
+        "source_type": "author_statement",
+        "page_label": null,
+        "check": {
+          "quote_check": "no_quote"
+        }
+      },
+      "confounders": {
+        "value": "Nicht berichtet",
+        "page": 0,
+        "quote": "",
+        "status": "not_reported",
+        "source_type": "author_statement",
+        "page_label": null,
+        "check": {
+          "quote_check": "no_quote"
+        }
+      }
+    },
+    "variables": [
+      {
+        "name": "High-speed running",
+        "category": "gps_external_load",
+        "definition": ">19.8 km/h",
+        "unit": "m",
+        "device": "WIMU PRO",
+        "page": 2,
+        "quote": "High-speed running was defined as distance covered above 19.8 km/h",
+        "status": "verified",
+        "source_type": "author_statement",
+        "page_label": "102",
+        "check": {
+          "quote_check": "exact",
+          "coverage": 1.0
+        }
+      },
+      {
+        "name": "CMJ jump height",
+        "category": "cmj_neuromuscular",
+        "definition": "Force plates",
+        "unit": "cm",
+        "device": "ForceDecks",
+        "page": 2,
+        "quote": "Countermovement jump height was assessed on dual force plates",
+        "status": "verified",
+        "source_type": "author_statement",
+        "page_label": "102",
+        "check": {
+          "quote_check": "exact",
+          "coverage": 1.0
+        }
+      }
+    ],
+    "results": {
+      "key_findings": [
+        {
+          "value": "CMJ an MD+1 reduziert (ES = -0,65)",
+          "page": 3,
+          "quote": "CMJ jump height was reduced at MD+1 compared with baseline (ES = -0.65)",
+          "status": "verified",
+          "source_type": "author_statement",
+          "page_label": "103",
+          "check": {
+            "quote_check": "exact",
+            "coverage": 1.0,
+            "page_corrected_from": 2
+          }
+        }
+      ],
+      "effect_sizes": [],
+      "correlations": [],
+      "confidence_intervals": [],
+      "significance": [],
+      "timepoint_differences": [],
+      "practical_significance": {
+        "value": "x",
+        "page": 0,
+        "quote": "",
+        "status": "verified",
+        "source_type": "ai_summary",
+        "page_label": null,
+        "check": {
+          "quote_check": "no_quote"
+        }
+      },
+      "fatigue_recovery_statements": []
+    },
+    "statistics": {
+      "method_tags": [
+        "mixed_models"
+      ],
+      "software": {
+        "value": "Nicht berichtet",
+        "page": 0,
+        "quote": "",
+        "status": "not_reported",
+        "source_type": "author_statement",
+        "page_label": null,
+        "check": {
+          "quote_check": "no_quote"
+        }
+      },
+      "alpha_level": {
+        "value": "Nicht berichtet",
+        "page": 0,
+        "quote": "",
+        "status": "not_reported",
+        "source_type": "author_statement",
+        "page_label": null,
+        "check": {
+          "quote_check": "no_quote"
+        }
+      }
+    },
+    "timepoints": {
+      "description": {
+        "value": "MD-1, MD+1, MD+2",
+        "page": 2,
+        "quote": "at MD-1, MD+1 and MD+2",
+        "status": "verified",
+        "source_type": "author_statement",
+        "page_label": "102",
+        "check": {
+          "quote_check": "exact",
+          "coverage": 1.0
+        }
+      },
+      "covers_24h": true,
+      "covers_48h": true,
+      "covers_72h": false,
+      "md_offsets": [
+        "MD-1",
+        "MD+1",
+        "MD+2"
+      ]
+    },
+    "flags": {
+      "uses_gps": true,
+      "uses_cmj": true,
+      "football": true,
+      "professional_football": true,
+      "internal_load": false,
+      "force_time_parameters": false
+    },
+    "critical": {
+      "strengths": [
+        {
+          "value": "Profi-Stichprobe",
+          "page": 0,
+          "quote": "",
+          "status": "verified",
+          "source_type": "ai_assessment",
+          "page_label": null,
+          "check": {
+            "quote_check": "no_quote"
+          }
+        }
+      ],
+      "weaknesses": [],
+      "limitations_reported": [
+        {
+          "value": "kleine Stichprobe",
+          "page": 3,
+          "quote": "Linear mixed models were used",
+          "status": "verified",
+          "source_type": "author_statement",
+          "page_label": "103",
+          "check": {
+            "quote_check": "exact",
+            "coverage": 1.0
+          }
+        }
+      ],
+      "transferability": {
+        "value": "hoch",
+        "page": 0,
+        "quote": "",
+        "status": "verified",
+        "source_type": "ai_assessment",
+        "page_label": null,
+        "check": {
+          "quote_check": "no_quote"
+        }
+      },
+      "comparability_to_thesis": {
+        "value": "hoch",
+        "page": 0,
+        "quote": "",
+        "status": "verified",
+        "source_type": "ai_assessment",
+        "page_label": null,
+        "check": {
+          "quote_check": "no_quote"
+        }
+      },
+      "open_questions": []
+    },
+    "relevance": {
+      "thematic": {
+        "score": 90,
+        "rationale": "x"
+      },
+      "methodological": {
+        "score": 80,
+        "rationale": "x"
+      },
+      "sample": {
+        "score": 100,
+        "rationale": "x"
+      },
+      "variables": {
+        "score": 85,
+        "rationale": "x"
+      },
+      "theoretical": {
+        "score": 60,
+        "rationale": "x"
+      },
+      "overall_rationale": "x",
+      "recommendations": [
+        "theory_background"
+      ],
+      "chapters": [
+        "load_cmj_relationship",
+        "cmj_monitoring"
+      ]
+    },
+    "topics": [
+      "cmj",
+      "external_load"
+    ],
+    "page_numbering_note": "x",
+    "verification": {
+      "claims": 43,
+      "verified": 21,
+      "uncertain": 3,
+      "not_reported": 19,
+      "quote_exact": 16,
+      "quote_fuzzy": 0,
+      "quote_not_found": 1,
+      "page_corrected": 2
+    },
+    "meta": {
+      "model": "mock",
+      "omitted_pages": [],
+      "relevance_total": 85.0,
+      "relevance_formula": "0,30·Thematik + 0,25·Methodik + 0,15·Stichprobe + 0,20·Variablen + 0,10·Theorie"
+    }
+  }
+}
