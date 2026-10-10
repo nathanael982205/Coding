@@ -39,7 +39,7 @@ class AIError(RuntimeError):
 
 def _client() -> anthropic.Anthropic:
     if not config.ai_configured():
-        raise AIUnavailable("Kein ANTHROPIC_API_KEY in .env konfiguriert – KI-Funktionen sind deaktiviert.")
+        raise AIUnavailable(f"Kein {config.key_variable()} in .env konfiguriert – KI-Funktionen sind deaktiviert.")
     return anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY, max_retries=3, timeout=900)
 
 
@@ -55,6 +55,9 @@ def _extract_json(text: str) -> Any:
 def call_json(system: str, user_content: str, schema: dict[str, Any],
               max_tokens: int = 64000) -> tuple[Any, dict[str, Any]]:
     """Strukturierter Aufruf mit JSON-Schema. Gibt (daten, meta) zurück."""
+    if config.PROVIDER == "openai":
+        from . import llm_openai
+        return llm_openai.call_json(system, user_content, schema, max_tokens)
     client = _client()
     use_schema = True
     use_fallback = config.CLAUDE_REFUSAL_FALLBACK
@@ -328,6 +331,9 @@ def synthesize(kind: str, task: str, digests: list[dict[str, Any]], schema: dict
 
 
 def test_connection() -> dict[str, Any]:
+    if config.PROVIDER == "openai":
+        from . import llm_openai
+        return llm_openai.test_connection()
     client = _client()
     try:
         resp = client.messages.create(

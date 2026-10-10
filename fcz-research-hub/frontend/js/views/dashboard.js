@@ -19,7 +19,7 @@ export async function renderDashboard(view, ctx) {
 
   view.innerHTML = `
     ${isDemo ? demoBanner() : ""}
-    ${!isDemo && !state.status?.ai_configured ? banner("warn", "<b>KI nicht konfiguriert.</b> Gespeicherte Analysen werden angezeigt; neue PDFs werden importiert und extrahiert, die KI-Analyse startet, sobald <code>ANTHROPIC_API_KEY</code> in <code>.env</code> gesetzt ist (siehe Einstellungen).") : ""}
+    ${!isDemo && !state.status?.ai_configured ? banner("warn", `<b>KI nicht konfiguriert.</b> Gespeicherte Analysen werden angezeigt; neue PDFs werden importiert und extrahiert, die KI-Analyse startet, sobald <code>${esc(state.status?.key_variable || "ANTHROPIC_API_KEY")}</code> in <code>.env</code> gesetzt ist (siehe Einstellungen).`) : ""}
     ${!isDemo && stats.needs_ocr ? banner("warn", `<b>${stats.needs_ocr} PDF(s) benötigen OCR.</b> Diese Dokumente enthalten keinen auslesbaren Text und können nicht verlässlich analysiert werden.`) : ""}
     <div class="page-head">
       <div><h1>Dashboard</h1><p>${isDemo ? "Beispielansicht mit fiktiven Werten – nach dem Import erscheinen hier ausschließlich Kennzahlen aus Ihren Studien." : "Überblick über die importierte Literatur – alle Kennzahlen stammen aus den real importierten Studien."}</p></div>

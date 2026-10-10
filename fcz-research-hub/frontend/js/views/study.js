@@ -113,7 +113,7 @@ function waitForAnalysis(id, ctx, view) {
 function noAnalysis(s) {
   if (s.status === "needs_ocr") return banner("warn", "<b>Keine Analyse möglich:</b> Das PDF enthält keinen auslesbaren Text. Bitte OCR durchführen (z. B. <code>ocrmypdf eingabe.pdf ausgabe.pdf</code>) und die OCR-Version importieren.");
   if (s.status === "queued" || s.status === "analyzing") return `<div class="card empty"><span class="spinner"></span><h3 style="margin-top:10px">KI-Analyse läuft</h3><p>Das kann je nach Länge 1–5 Minuten dauern. Die Seite aktualisiert sich automatisch.</p></div>`;
-  return `<div class="card empty"><h3>Noch keine KI-Analyse</h3><p>${state.status?.ai_configured ? "Mit „Analysieren“ starten." : "Für die Analyse <code>ANTHROPIC_API_KEY</code> in <code>.env</code> eintragen und den Server neu starten."}</p>${heuristicsBlock(s)}</div>`;
+  return `<div class="card empty"><h3>Noch keine KI-Analyse</h3><p>${state.status?.ai_configured ? "Mit „Analysieren“ starten." : `Für die Analyse <code>${esc(state.status?.key_variable || "ANTHROPIC_API_KEY")}</code> in <code>.env</code> eintragen und den Server neu starten.`}</p>${heuristicsBlock(s)}</div>`;
 }
 
 function heuristicsBlock(s) {

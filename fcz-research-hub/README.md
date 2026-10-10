@@ -2,7 +2,7 @@
 
 Lokale Webanwendung für die Literaturarbeit der Masterarbeit *„GPS-basierte externe Belastung und neuromuskuläre Readiness (CMJ) professioneller Fußballspieler 24–72 h nach Belastung“* (Kooperation FC Zürich).
 
-Sie importieren wissenschaftliche PDFs. Die App extrahiert den Text seitengenau, lässt jede Studie von Claude strukturiert analysieren und prüft danach jede Angabe automatisch gegen den PDF-Text. Das Ergebnis ist eine durchsuchbare Literaturdatenbank mit Dashboard, Literaturmatrix, Studienvergleich, Theorie- und Methodik-Assistent sowie einer Lückenanalyse.
+Sie importieren wissenschaftliche PDFs. Die App extrahiert den Text seitengenau, lässt jede Studie von einer KI – wahlweise **Claude (Anthropic)** oder **ChatGPT/GPT (OpenAI)** – strukturiert analysieren und prüft danach jede Angabe automatisch gegen den PDF-Text. Das Ergebnis ist eine durchsuchbare Literaturdatenbank mit Dashboard, Literaturmatrix, Studienvergleich, Theorie- und Methodik-Assistent sowie einer Lückenanalyse.
 
 ---
 
@@ -20,7 +20,7 @@ source .venv/bin/activate
 
 pip install -r requirements.txt
 cp .env.example .env          # Windows: copy .env.example .env
-# .env öffnen und ANTHROPIC_API_KEY eintragen (optional, siehe unten)
+# .env öffnen, HUB_PROVIDER wählen und den passenden Schlüssel eintragen (optional, siehe unten)
 
 python run.py                 # öffnet http://localhost:8000
 ```
@@ -59,6 +59,7 @@ Die Oberfläche funktioniert offline. PDF.js und Chart.js liegen lokal unter `fr
 |---|---|
 | **FastAPI + SQLite** | Ein Prozess, keine Datenbankinstallation. Eine Datei genügt für Backups. FTS5 liefert eine schnelle Volltextsuche ohne Zusatzdienst |
 | **PyMuPDF** | Schnelle, robuste Extraktion pro Seite, Seitenlabels, Bilderkennung für die OCR-Diagnose und Koordinaten für die Markierungen im Viewer (`search_for`) |
+| **Zwei KI-Anbieter zur Wahl** | `HUB_PROVIDER=anthropic` (Claude, offizielles `anthropic`-SDK) oder `HUB_PROVIDER=openai` (GPT-Modelle über die OpenAI Responses API mit Structured Outputs, `backend/app/llm_openai.py`). Prompts, Schema, Zitatprüfung und alle Auswertungen sind für beide identisch |
 | **Claude über das offizielle `anthropic`-SDK** | Structured Outputs (JSON-Schema) erzwingen das Analyseformat. Streaming verhindert Timeouts bei langen Analysen. Der Refusal-Fallback ist aktiv und abschaltbar. Standardmodell: `claude-opus-5-5`, Effort `high` |
 | **Text mit Seitenmarkern statt PDF-Upload an die API** | Die KI erhält `[[PDF-SEITE n \| gedruckte Seite: x]]` vor jeder Seite. So sind Seitenangaben eindeutig physische Seiten und lassen sich gegen genau denselben Text prüfen. Eingescannte Seiten werden ausdrücklich als „kein auslesbarer Text“ markiert, statt dass die KI rät |
 | **Eigenes CSS statt Tailwind** | Kein Build-Schritt und kein CDN. Design-Tokens als CSS-Variablen machen den Dark Mode trivial |
@@ -160,7 +161,11 @@ Status einer Studie: `extracted` → `queued` → `analyzing` → `analyzed`, au
 
 | Variable | Standard | Bedeutung |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | – | Claude-API-Schlüssel. Bleibt im Backend und erscheint nie im Browser |
+| `HUB_PROVIDER` | `anthropic` | KI-Anbieter: `anthropic` (Claude) oder `openai` (ChatGPT/GPT) |
+| `ANTHROPIC_API_KEY` | – | Claude-API-Schlüssel (console.anthropic.com). Bleibt im Backend und erscheint nie im Browser |
+| `OPENAI_API_KEY` | – | OpenAI-API-Schlüssel (platform.openai.com), nur bei `HUB_PROVIDER=openai` |
+| `HUB_OPENAI_MODEL` | `gpt-5.5` | OpenAI-Modell; Namen gemäß platform.openai.com |
+| `HUB_OPENAI_EFFORT` | `medium` | Denktiefe der OpenAI-Reasoning-Modelle (`low`/`medium`/`high`); wird automatisch weggelassen, wenn das Modell sie nicht unterstützt |
 | `HUB_CLAUDE_MODEL` | `claude-opus-5-5` | Modell |
 | `HUB_CLAUDE_EFFORT` | `high` | Analysetiefe: `low` bis `max` (höher = gründlicher und teurer) |
 | `HUB_REFUSAL_FALLBACK` | `true` | Server-seitiger Fallback, falls ein Sicherheitsfilter eine Anfrage ablehnt |
@@ -170,13 +175,15 @@ Status einer Studie: `extracted` → `queued` → `analyzing` → `analyzed`, au
 | `DATA_DIR` | `./data` | Speicherort für Daten |
 | `HOST` / `PORT` | `127.0.0.1` / `8000` | Nur lokal erreichbar |
 
+**Hinweis zu Abos:** Weder ein Claude.ai- noch ein ChatGPT-Abo (Plus/Pro) enthält API-Zugang. Für beide Anbieter braucht man einen separaten API-Schlüssel mit eigenem Guthaben.
+
 **Kosten:** Für einen typischen Artikel mit 10–25 Seiten sind grob einige zehntausend Token pro Analyse zu erwarten, also Kosten im Bereich von Cent bis unter einem Dollar pro Studie. Die tatsächlichen Werte hängen von Länge und Effort ab und stehen pro Studie in der Datenbank (`analysis_usage`). „Alle neu analysieren“ fragt vorher nach.
 
 ---
 
 ## 7. Datenschutz
 
-- An die Claude API geht **nur** der extrahierte Text der importierten wissenschaftlichen PDFs bzw. daraus abgeleitete Analysen (für Synthesen).
+- An die gewählte KI-API (Anthropic oder OpenAI) geht **nur** der extrahierte Text der importierten wissenschaftlichen PDFs bzw. daraus abgeleitete Analysen (für Synthesen).
 - Die App hat keine Funktion für Spieler- oder Vereinsdaten. Bitte keine internen FCZ-Dokumente importieren (WIMU- oder ForceDecks-Exporte, Spielerlisten, Berichte).
 - Alle Daten liegen lokal in `data/`. Der Server ist standardmäßig nur über `127.0.0.1` erreichbar.
 - `.env` und `data/` stehen in `.gitignore`.

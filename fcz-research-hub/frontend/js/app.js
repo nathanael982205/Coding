@@ -43,7 +43,7 @@ export async function refreshStatus() {
     pill.innerHTML = state.status.ai_configured
       ? `<span class="dot ok"></span>KI aktiv · ${esc(state.status.model)}`
       : '<span class="dot off"></span>KI nicht konfiguriert';
-    pill.title = state.status.ai_configured ? "Claude API ist im Backend konfiguriert." : "ANTHROPIC_API_KEY in .env eintragen. Gespeicherte Analysen bleiben nutzbar.";
+    pill.title = state.status.ai_configured ? `${state.status.provider_label} ist im Backend konfiguriert.` : `${state.status.key_variable} in .env eintragen. Gespeicherte Analysen bleiben nutzbar.`;
   } catch (e) { /* Backend offline */ }
 }
 

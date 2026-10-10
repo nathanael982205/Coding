@@ -23,7 +23,15 @@ BACKUP_DIR = DATA_DIR / "backups"
 DB_PATH = DATA_DIR / "research_hub.sqlite3"
 FRONTEND_DIR = PROJECT_ROOT / "frontend"
 
+# KI-Anbieter: "anthropic" (Claude) oder "openai" (ChatGPT/GPT-Modelle)
+PROVIDER = os.getenv("HUB_PROVIDER", "anthropic").strip().lower()
+if PROVIDER not in {"anthropic", "openai"}:
+    PROVIDER = "anthropic"
+
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "").strip()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
+OPENAI_MODEL = os.getenv("HUB_OPENAI_MODEL", "gpt-5.5").strip()
+OPENAI_EFFORT = os.getenv("HUB_OPENAI_EFFORT", "medium").strip()
 CLAUDE_MODEL = os.getenv("HUB_CLAUDE_MODEL", "claude-opus-5-5").strip()
 CLAUDE_EFFORT = os.getenv("HUB_CLAUDE_EFFORT", "high").strip()
 # Server-seitiger Refusal-Fallback (Claude API). Bei Problemen in .env abschalten.
@@ -42,4 +50,16 @@ for d in (DATA_DIR, PDF_DIR, BACKUP_DIR):
 
 
 def ai_configured() -> bool:
-    return bool(ANTHROPIC_API_KEY)
+    return bool(OPENAI_API_KEY) if PROVIDER == "openai" else bool(ANTHROPIC_API_KEY)
+
+
+def active_model() -> str:
+    return OPENAI_MODEL if PROVIDER == "openai" else CLAUDE_MODEL
+
+
+def active_effort() -> str:
+    return OPENAI_EFFORT if PROVIDER == "openai" else CLAUDE_EFFORT
+
+
+def key_variable() -> str:
+    return "OPENAI_API_KEY" if PROVIDER == "openai" else "ANTHROPIC_API_KEY"

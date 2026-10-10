@@ -22,7 +22,7 @@ def _startup() -> None:
     db.init_db()
     jobs.recover_interrupted()
     log.info("Datenverzeichnis: %s | KI konfiguriert: %s | Modell: %s",
-             config.DATA_DIR, config.ai_configured(), config.CLAUDE_MODEL)
+             config.DATA_DIR, config.ai_configured(), config.active_model())
 
 
 def _study_or_404(study_id: int) -> dict[str, Any]:
@@ -34,7 +34,7 @@ def _study_or_404(study_id: int) -> dict[str, Any]:
 
 def _ai_guard() -> None:
     if not config.ai_configured():
-        raise HTTPException(503, "KI nicht konfiguriert: ANTHROPIC_API_KEY in .env eintragen und Server neu starten.")
+        raise HTTPException(503, f"KI nicht konfiguriert: {config.key_variable()} in .env eintragen und Server neu starten.")
 
 
 def _ai_call(fn, *args):
@@ -55,9 +55,12 @@ def status() -> dict[str, Any]:
     n = conn.execute("SELECT count(*) FROM studies").fetchone()[0]
     return {
         "ai_configured": config.ai_configured(),
-        "model": config.CLAUDE_MODEL,
-        "effort": config.CLAUDE_EFFORT,
-        "refusal_fallback": config.CLAUDE_REFUSAL_FALLBACK,
+        "provider": config.PROVIDER,
+        "provider_label": "OpenAI (ChatGPT)" if config.PROVIDER == "openai" else "Anthropic (Claude)",
+        "key_variable": config.key_variable(),
+        "model": config.active_model(),
+        "effort": config.active_effort(),
+        "refusal_fallback": config.CLAUDE_REFUSAL_FALLBACK and config.PROVIDER == "anthropic",
         "study_count": n,
         "active_jobs": jobs.active(),
         "data_dir": str(config.DATA_DIR),

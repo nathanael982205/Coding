@@ -13,14 +13,15 @@ export async function renderSettings(view, ctx) {
     <div class="page-head"><div><h1>Einstellungen</h1><p>KI-Anbindung, Kontext der Masterarbeit, Export, Backup und Datenschutz.</p></div></div>
     <div class="grid two">
       <div class="card stack sm">
-        <h3>KI-Anbindung (Claude API)</h3>
+        <h3>KI-Anbindung</h3>
         ${kv([
           ["Status", st.ai_configured ? '<span class="badge ok">konfiguriert</span>' : '<span class="badge warn">nicht konfiguriert</span>'],
+          ["Anbieter", `${esc(st.provider_label)} <span class="xs muted">(in .env: <code>HUB_PROVIDER=${esc(st.provider)}</code>)</span>`],
           ["Modell", `<code>${esc(st.model)}</code>`], ["Effort", `<code>${esc(st.effort)}</code>`],
-          ["Refusal-Fallback", st.refusal_fallback ? "aktiv (server-seitig)" : "aus"],
+          ...(st.provider === "anthropic" ? [["Refusal-Fallback", st.refusal_fallback ? "aktiv (server-seitig)" : "aus"]] : []),
           ["Datenordner", `<code class="small">${esc(st.data_dir)}</code>`],
         ])}
-        ${st.ai_configured ? "" : banner("warn", "API-Schlüssel in <code>.env</code> eintragen (<code>ANTHROPIC_API_KEY=...</code>) und den Server neu starten. Der Schlüssel bleibt im Backend und erscheint nie im Browser.")}
+        ${st.ai_configured ? "" : banner("warn", `API-Schlüssel in <code>.env</code> eintragen (<code>${esc(st.key_variable)}=...</code>) und den Server neu starten. Der Schlüssel bleibt im Backend und erscheint nie im Browser.`)}
         <div class="btn-row"><button class="btn" id="s-test" ${st.ai_configured ? "" : "disabled"}>Verbindung testen</button>
           <button class="btn" id="s-pending" ${st.ai_configured && pending ? "" : "disabled"}>Ausstehende analysieren (${pending})</button>
           <button class="btn" id="s-all" ${st.ai_configured && state.studies.length ? "" : "disabled"}>Alle neu analysieren</button></div>
@@ -29,7 +30,7 @@ export async function renderSettings(view, ctx) {
       <div class="card stack sm">
         <h3>Datenschutz</h3>
         <ul class="small" style="margin:0;padding-left:18px;line-height:1.7">
-          <li>An die Claude API wird ausschließlich der extrahierte Text der von Ihnen importierten wissenschaftlichen PDFs bzw. daraus abgeleitete Analysen gesendet.</li>
+          <li>An die gewählte KI-API (Claude bzw. OpenAI) wird ausschließlich der extrahierte Text der von Ihnen importierten wissenschaftlichen PDFs bzw. daraus abgeleitete Analysen gesendet.</li>
           <li>Die Anwendung verarbeitet <b>keine FCZ-Spieler- oder Vereinsdaten</b>. Bitte keine internen Dokumente (WIMU-/ForceDecks-Exporte, Spielerlisten) importieren.</li>
           <li>Alle Daten (PDFs, Datenbank, Notizen) liegen lokal im Datenordner.</li>
           <li>Der Server lauscht standardmäßig nur auf <code>127.0.0.1</code> (nicht im Netzwerk erreichbar).</li>
