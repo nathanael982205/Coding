@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import json
 import logging
+import threading
+import time
 from typing import Any
 
 import openai
@@ -15,6 +17,46 @@ from . import config
 from .llm import AIError, AIUnavailable, _extract_json
 
 log = logging.getLogger("research_hub.llm_openai")
+
+# Bei Rate-Limits (nicht bei fehlendem Guthaben) automatisch warten und erneut versuchen.
+RATE_LIMIT_RETRIES = 8
+# Nur eine OpenAI-Anfrage gleichzeitig – schont niedrige Limits neuer Konten.
+_request_lock = threading.Semaphore(1)
+
+
+def _is_quota_error(exc: openai.RateLimitError) -> bool:
+    body = exc.body if isinstance(exc.body, dict) else {}
+    err = body.get("error", body) if isinstance(body, dict) else {}
+    code = (err.get("code") or err.get("type") or "") if isinstance(err, dict) else ""
+    detail = ((err.get("message") if isinstance(err, dict) else None) or str(exc.message)).lower()
+    return code == "insufficient_quota" or "quota" in detail
+
+
+def _wait_seconds(exc: openai.RateLimitError, attempt: int) -> float:
+    try:
+        ra = exc.response.headers.get("retry-after")
+        if ra:
+            return min(max(float(ra), 5.0), 120.0)
+    except Exception:  # noqa: BLE001
+        pass
+    return min(20.0 * (attempt + 1), 120.0)
+
+
+def _create(client: openai.OpenAI, kwargs: dict[str, Any]):
+    """responses.create mit Warten bei Rate-Limits (Guthabenfehler werden sofort gemeldet)."""
+    for attempt in range(RATE_LIMIT_RETRIES):
+        try:
+            with _request_lock:
+                return client.responses.create(**kwargs)
+        except openai.RateLimitError as exc:
+            too_large = "request too large" in str(exc.message).lower()
+            if _is_quota_error(exc) or too_large or attempt == RATE_LIMIT_RETRIES - 1:
+                raise
+            wait = _wait_seconds(exc, attempt)
+            log.warning("OpenAI-Rate-Limit – warte %.0f s (Versuch %d/%d): %s",
+                        wait, attempt + 1, RATE_LIMIT_RETRIES, exc.message)
+            time.sleep(wait)
+    raise AIError("Rate-Limit: zu viele Versuche.")
 
 
 def _client() -> openai.OpenAI:
@@ -27,12 +69,16 @@ def _explain_429(exc: openai.RateLimitError) -> str:
     """Unterscheidet fehlendes Guthaben von Rate-Limits und gibt die Originalmeldung weiter."""
     body = exc.body if isinstance(exc.body, dict) else {}
     err = body.get("error", body) if isinstance(body, dict) else {}
-    code = (err.get("code") or err.get("type") or "") if isinstance(err, dict) else ""
     detail = (err.get("message") if isinstance(err, dict) else None) or str(exc.message)
-    if code == "insufficient_quota" or "quota" in detail.lower():
+    if _is_quota_error(exc):
         return ("OpenAI meldet: kein nutzbares Guthaben (insufficient_quota). Prüfen Sie unter platform.openai.com → "
                 "Billing, ob das Guthaben gebucht ist und ob der API-Schlüssel zum selben Projekt/zur selben "
                 f"Organisation gehört. Neu eingezahltes Guthaben kann einige Minuten brauchen. Originalmeldung: {detail}")
+    if "request too large" in detail.lower():
+        return ("OpenAI (429): Diese Studie ist für das Token-pro-Minute-Limit Ihres Kontos zu groß – Warten hilft "
+                "hier nicht. Lösungen: in .env HUB_OPENAI_MAX_OUTPUT=16000 setzen, ein Modell mit höherem Limit "
+                "wählen (HUB_OPENAI_MODEL) oder abwarten, bis OpenAI Ihr Konto auf eine höhere Stufe hebt "
+                f"(platform.openai.com → Limits). Originalmeldung: {detail}")
     return ("OpenAI-Rate-Limit (429): Die Anfrage ist größer als das Token-pro-Minute-Limit Ihres Kontos "
             "(neue Konten haben niedrige Limits, siehe platform.openai.com → Limits). Tipp: in .env "
             "ANALYSIS_WORKERS=1 und HUB_OPENAI_MAX_OUTPUT=16000 setzen und später erneut versuchen. "
@@ -63,7 +109,7 @@ def call_json(system: str, user_content: str, schema: dict[str, Any],
         if use_reasoning:
             kwargs["reasoning"] = {"effort": config.OPENAI_EFFORT}
         try:
-            resp = client.responses.create(**kwargs)
+            resp = _create(client, kwargs)
         except openai.AuthenticationError as exc:
             raise AIError("OpenAI-API-Schlüssel ungültig (401). Bitte OPENAI_API_KEY in .env prüfen.") from exc
         except openai.PermissionDeniedError as exc:
