@@ -32,6 +32,8 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "").strip()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "").strip()
 OPENAI_MODEL = os.getenv("HUB_OPENAI_MODEL", "gpt-5.5").strip()
 OPENAI_EFFORT = os.getenv("HUB_OPENAI_EFFORT", "medium").strip()
+# Max. Antwortlänge pro OpenAI-Anfrage (zählt bei OpenAI gegen das Token-pro-Minute-Limit)
+OPENAI_MAX_OUTPUT = int(os.getenv("HUB_OPENAI_MAX_OUTPUT", "32000"))
 CLAUDE_MODEL = os.getenv("HUB_CLAUDE_MODEL", "claude-opus-5-5").strip()
 CLAUDE_EFFORT = os.getenv("HUB_CLAUDE_EFFORT", "high").strip()
 # Server-seitiger Refusal-Fallback (Claude API). Bei Problemen in .env abschalten.

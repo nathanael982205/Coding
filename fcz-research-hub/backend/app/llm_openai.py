@@ -23,6 +23,22 @@ def _client() -> openai.OpenAI:
     return openai.OpenAI(api_key=config.OPENAI_API_KEY, max_retries=3, timeout=900)
 
 
+def _explain_429(exc: openai.RateLimitError) -> str:
+    """Unterscheidet fehlendes Guthaben von Rate-Limits und gibt die Originalmeldung weiter."""
+    body = exc.body if isinstance(exc.body, dict) else {}
+    err = body.get("error", body) if isinstance(body, dict) else {}
+    code = (err.get("code") or err.get("type") or "") if isinstance(err, dict) else ""
+    detail = (err.get("message") if isinstance(err, dict) else None) or str(exc.message)
+    if code == "insufficient_quota" or "quota" in detail.lower():
+        return ("OpenAI meldet: kein nutzbares Guthaben (insufficient_quota). Prüfen Sie unter platform.openai.com → "
+                "Billing, ob das Guthaben gebucht ist und ob der API-Schlüssel zum selben Projekt/zur selben "
+                f"Organisation gehört. Neu eingezahltes Guthaben kann einige Minuten brauchen. Originalmeldung: {detail}")
+    return ("OpenAI-Rate-Limit (429): Die Anfrage ist größer als das Token-pro-Minute-Limit Ihres Kontos "
+            "(neue Konten haben niedrige Limits, siehe platform.openai.com → Limits). Tipp: in .env "
+            "ANALYSIS_WORKERS=1 und HUB_OPENAI_MAX_OUTPUT=16000 setzen und später erneut versuchen. "
+            f"Originalmeldung: {detail}")
+
+
 def call_json(system: str, user_content: str, schema: dict[str, Any],
               max_tokens: int = 64000) -> tuple[Any, dict[str, Any]]:
     client = _client()
@@ -34,7 +50,7 @@ def call_json(system: str, user_content: str, schema: dict[str, Any],
         kwargs: dict[str, Any] = {
             "model": config.OPENAI_MODEL,
             "input": [{"role": "user", "content": user_content}],
-            "max_output_tokens": max_tokens,
+            "max_output_tokens": min(max_tokens, config.OPENAI_MAX_OUTPUT),
             "store": False,
         }
         if use_schema:
@@ -67,7 +83,7 @@ def call_json(system: str, user_content: str, schema: dict[str, Any],
                 continue
             raise AIError(f"Ungültige Anfrage (400): {exc.message}") from exc
         except openai.RateLimitError as exc:
-            raise AIError("Rate-Limit oder Guthaben erschöpft (429). Guthaben unter platform.openai.com prüfen.") from exc
+            raise AIError(_explain_429(exc)) from exc
         except openai.APIStatusError as exc:
             raise AIError(f"API-Fehler {exc.status_code}: {exc.message}") from exc
         except openai.APIConnectionError as exc:

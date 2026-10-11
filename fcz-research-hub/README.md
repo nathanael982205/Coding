@@ -165,6 +165,7 @@ Status einer Studie: `extracted` → `queued` → `analyzing` → `analyzed`, au
 | `ANTHROPIC_API_KEY` | – | Claude-API-Schlüssel (console.anthropic.com). Bleibt im Backend und erscheint nie im Browser |
 | `OPENAI_API_KEY` | – | OpenAI-API-Schlüssel (platform.openai.com), nur bei `HUB_PROVIDER=openai` |
 | `HUB_OPENAI_MODEL` | `gpt-5.5` | OpenAI-Modell; Namen gemäß platform.openai.com |
+| `HUB_OPENAI_MAX_OUTPUT` | `32000` | Max. Antwortlänge pro OpenAI-Anfrage. Bei Fehler 429 auf neuen Konten auf `16000` senken und `ANALYSIS_WORKERS=1` setzen |
 | `HUB_OPENAI_EFFORT` | `medium` | Denktiefe der OpenAI-Reasoning-Modelle (`low`/`medium`/`high`); wird automatisch weggelassen, wenn das Modell sie nicht unterstützt |
 | `HUB_CLAUDE_MODEL` | `claude-opus-5-5` | Modell |
 | `HUB_CLAUDE_EFFORT` | `high` | Analysetiefe: `low` bis `max` (höher = gründlicher und teurer) |
